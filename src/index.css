@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Brand Colors - Wealth Being Advisors */
+    --oxford-blue: 210 53% 11%;        /* #0D1B2A - Primary dark */
+    --celestial-blue: 218 100% 61%;    /* #3A86FF - Accent/CTA */
+    --celadon: 125 33% 68%;            /* #ACE1AF - Supportive/Borders */
+    --linen: 30 75% 95%;               /* #FAF0E6 - Background light */
+    --wenge: 10 7% 35%;                /* #645452 - Neutral text */
+    
+    /* Semantic tokens */
+    --background: 30 75% 95%;          /* Linen */
+    --foreground: 210 53% 11%;         /* Oxford Blue */
+    --card: 0 0% 100%;                 /* White */
+    --card-foreground: 210 53% 11%;    /* Oxford Blue */
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 53% 11%;
+    --primary: 210 53% 11%;            /* Oxford Blue */
+    --primary-foreground: 0 0% 100%;   /* White */
+    --secondary: 218 100% 61%;         /* Celestial Blue */
+    --secondary-foreground: 0 0% 100%; /* White */
+    --muted: 30 75% 95%;               /* Linen */
+    --muted-foreground: 10 7% 35%;     /* Wenge */
+    --accent: 125 33% 68%;             /* Celadon */
+    --accent-foreground: 210 53% 11%;  /* Oxford Blue */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 125 33% 68%;             /* Celadon */
+    --input: 240 5.9% 90%;
+    --ring: 218 100% 61%;              /* Celestial Blue */
+    --radius: 0.75rem;
+
+    /* Custom design tokens */
+    --shadow-elegant: 0 10px 30px -10px hsl(210 53% 11% / 0.15);
+    --shadow-hover: 0 20px 40px -15px hsl(218 100% 61% / 0.25);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 210 53% 11%;         /* Oxford Blue for dark bg */
+    --foreground: 30 75% 95%;          /* Linen for dark text */
+    --card: 240 10% 15%;
+    --card-foreground: 30 75% 95%;
+    --popover: 240 10% 15%;
+    --popover-foreground: 30 75% 95%;
+    --primary: 30 75% 95%;             /* Linen */
+    --primary-foreground: 210 53% 11%; /* Oxford Blue */
+    --secondary: 218 100% 61%;         /* Celestial Blue */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 10 7% 35%;     /* Wenge */
+    --accent: 125 33% 68%;             /* Celadon */
+    --accent-foreground: 210 53% 11%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 125 33% 68%;             /* Celadon */
+    --input: 240 3.7% 15.9%;
+    --ring: 218 100% 61%;              /* Celestial Blue */
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in-delay {
+    animation: fade-in 0.6s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out forwards;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
