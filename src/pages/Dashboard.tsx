@@ -10,6 +10,7 @@ import { StatementOfPurposeCard } from "@/components/dashboard/StatementOfPurpos
 import { BusinessInfoCard } from "@/components/dashboard/BusinessInfoCard";
 import { NetWorthChart } from "@/components/dashboard/NetWorthChart";
 import { CashFlowCard } from "@/components/dashboard/CashFlowCard";
+import { CashFlowAllocationCard } from "@/components/dashboard/CashFlowAllocationCard";
 import { RatiosCard } from "@/components/dashboard/RatiosCard";
 
 const Dashboard = () => {
@@ -168,6 +169,7 @@ const Dashboard = () => {
 
           <div className="grid gap-6 xl:grid-cols-2">
             <BalanceSheetCard userId={user?.id} isSuperAdmin={isSuperAdmin} />
+            <CashFlowAllocationCard userId={user?.id} />
             <CashFlowCard />
             <StatementOfPurposeCard userId={user?.id} isSuperAdmin={isSuperAdmin} />
             <BusinessInfoCard userId={user?.id} isSuperAdmin={isSuperAdmin} />
