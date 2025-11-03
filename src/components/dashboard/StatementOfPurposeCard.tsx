@@ -68,22 +68,25 @@ export const StatementOfPurposeCard = ({ userId, isSuperAdmin }: StatementOfPurp
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-white/10 bg-white/5 text-white">
         <CardHeader>
-          <CardTitle>Statement of Financial Purpose</CardTitle>
+          <CardTitle className="text-white">Statement of Financial Purpose</CardTitle>
+          <CardDescription className="text-white/60">Loading your narrative...</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Loading...</p>
+          <p className="text-white/60">Loading...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="border-white/10 bg-white/5 text-white">
       <CardHeader>
-        <CardTitle>Statement of Financial Purpose</CardTitle>
-        <CardDescription>Your financial goals and values</CardDescription>
+        <CardTitle className="text-white">Statement of Financial Purpose</CardTitle>
+        <CardDescription className="text-white/60">
+          Your financial goals and values
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {editing ? (
@@ -93,10 +96,20 @@ export const StatementOfPurposeCard = ({ userId, isSuperAdmin }: StatementOfPurp
               onChange={(e) => setContent(e.target.value)}
               rows={8}
               placeholder="Write your statement of financial purpose..."
+              className="border-white/10 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/40"
             />
             <div className="flex gap-2">
-              <Button onClick={handleSave}>Save</Button>
-              <Button onClick={() => setEditing(false)} variant="outline">
+              <Button
+                onClick={handleSave}
+                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
+              >
+                Save
+              </Button>
+              <Button
+                onClick={() => setEditing(false)}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
                 Cancel
               </Button>
             </div>
@@ -104,11 +117,16 @@ export const StatementOfPurposeCard = ({ userId, isSuperAdmin }: StatementOfPurp
         ) : (
           <div className="space-y-4">
             {content ? (
-              <p className="whitespace-pre-wrap">{content}</p>
+              <p className="whitespace-pre-wrap text-white/75">{content}</p>
             ) : (
-              <p className="text-muted-foreground">No statement recorded yet</p>
+              <p className="text-white/60">No statement recorded yet</p>
             )}
-            <Button onClick={() => setEditing(true)}>Edit Statement</Button>
+            <Button
+              onClick={() => setEditing(true)}
+              className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
+            >
+              Edit Statement
+            </Button>
           </div>
         )}
       </CardContent>

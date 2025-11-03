@@ -8,78 +8,76 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Brand Colors - Wealth Being Advisors */
-    --oxford-blue: 210 53% 11%;        /* #0D1B2A - Primary dark */
-    --celestial-blue: 218 100% 61%;    /* #3A86FF - Accent/CTA */
-    --celadon: 125 33% 68%;            /* #ACE1AF - Supportive/Borders */
-    --linen: 30 75% 95%;               /* #FAF0E6 - Background light */
-    --wenge: 10 7% 35%;                /* #645452 - Neutral text */
-    
-    /* Semantic tokens */
-    --background: 30 75% 95%;          /* Linen */
-    --foreground: 210 53% 11%;         /* Oxford Blue */
-    --card: 0 0% 100%;                 /* White */
-    --card-foreground: 210 53% 11%;    /* Oxford Blue */
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 53% 11%;
-    --primary: 210 53% 11%;            /* Oxford Blue */
-    --primary-foreground: 0 0% 100%;   /* White */
-    --secondary: 218 100% 61%;         /* Celestial Blue */
-    --secondary-foreground: 0 0% 100%; /* White */
-    --muted: 30 75% 95%;               /* Linen */
-    --muted-foreground: 10 7% 35%;     /* Wenge */
-    --accent: 125 33% 68%;             /* Celadon */
-    --accent-foreground: 210 53% 11%;  /* Oxford Blue */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 125 33% 68%;             /* Celadon */
-    --input: 240 5.9% 90%;
-    --ring: 218 100% 61%;              /* Celestial Blue */
-    --radius: 0.75rem;
+    /* Core palette */
+    --background: 222 47% 6%;
+    --foreground: 214 32% 91%;
+    --card: 222 47% 12%;
+    --card-foreground: 214 32% 91%;
+    --popover: 222 47% 12%;
+    --popover-foreground: 214 32% 91%;
+    --primary: 248 96% 68%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 196 94% 63%;
+    --secondary-foreground: 222 47% 6%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 214 18% 65%;
+    --accent: 284 88% 74%;
+    --accent-foreground: 222 47% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 248 96% 68%;
+    --radius: 1rem;
 
-    /* Custom design tokens */
-    --shadow-elegant: 0 10px 30px -10px hsl(210 53% 11% / 0.15);
-    --shadow-hover: 0 20px 40px -15px hsl(218 100% 61% / 0.25);
+    /* Ambient lighting */
+    --gradient-hero: radial-gradient(circle at 20% 20%, hsl(196 100% 53% / 0.28), transparent 55%), radial-gradient(circle at 85% 10%, hsl(284 88% 74% / 0.22), transparent 45%), linear-gradient(140deg, hsl(222 47% 8%), hsl(230 36% 12%));
+    --gradient-accent: linear-gradient(120deg, hsl(248 96% 68%), hsl(196 94% 63%));
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Shadows */
+    --shadow-elegant: 0 25px 50px -20px hsl(221 61% 6% / 0.55);
+    --shadow-hover: 0 40px 80px -35px hsl(248 96% 68% / 0.45);
+
+    /* Sidebar tokens */
+    --sidebar-background: 222 47% 10%;
+    --sidebar-foreground: 214 32% 88%;
+    --sidebar-primary: 248 96% 68%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 221 39% 15%;
+    --sidebar-accent-foreground: 214 32% 88%;
+    --sidebar-border: 216 34% 17%;
+    --sidebar-ring: 248 96% 68%;
   }
 
   .dark {
-    --background: 210 53% 11%;         /* Oxford Blue for dark bg */
-    --foreground: 30 75% 95%;          /* Linen for dark text */
-    --card: 240 10% 15%;
-    --card-foreground: 30 75% 95%;
-    --popover: 240 10% 15%;
-    --popover-foreground: 30 75% 95%;
-    --primary: 30 75% 95%;             /* Linen */
-    --primary-foreground: 210 53% 11%; /* Oxford Blue */
-    --secondary: 218 100% 61%;         /* Celestial Blue */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 10 7% 35%;     /* Wenge */
-    --accent: 125 33% 68%;             /* Celadon */
-    --accent-foreground: 210 53% 11%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 125 33% 68%;             /* Celadon */
-    --input: 240 3.7% 15.9%;
-    --ring: 218 100% 61%;              /* Celestial Blue */
+    --background: 222 47% 96%;
+    --foreground: 222 47% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 10%;
+    --primary: 248 75% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 196 82% 46%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 220 18% 92%;
+    --muted-foreground: 222 28% 32%;
+    --accent: 266 84% 70%;
+    --accent-foreground: 222 47% 10%;
+    --destructive: 0 76% 45%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 18% 85%;
+    --input: 220 18% 85%;
+    --ring: 248 75% 58%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222 47% 10%;
+    --sidebar-primary: 248 75% 58%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 220 18% 92%;
+    --sidebar-accent-foreground: 222 47% 10%;
+    --sidebar-border: 220 18% 85%;
+    --sidebar-ring: 248 75% 58%;
   }
 }
 
@@ -90,6 +88,14 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-body;
+    background-image: var(--gradient-hero);
+    background-attachment: fixed;
+    background-size: cover;
+    min-height: 100vh;
+  }
+
+  .dark body {
+    background-image: none;
   }
 
   h1, h2, h3, h4, h5, h6 {

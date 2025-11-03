@@ -82,22 +82,27 @@ export const BusinessInfoCard = ({ userId, isSuperAdmin }: BusinessInfoCardProps
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-white/10 bg-white/5 text-white">
         <CardHeader>
-          <CardTitle>Key Business Information</CardTitle>
+          <CardTitle className="text-white">Key Business Information</CardTitle>
+          <CardDescription className="text-white/60">
+            Important metrics coming online...
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Loading...</p>
+          <p className="text-white/60">Loading...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="border-white/10 bg-white/5 text-white">
       <CardHeader>
-        <CardTitle>Key Business Information</CardTitle>
-        <CardDescription>Important business metrics and details</CardDescription>
+        <CardTitle className="text-white">Key Business Information</CardTitle>
+        <CardDescription className="text-white/60">
+          Important business metrics and details
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {editing ? (
@@ -107,10 +112,20 @@ export const BusinessInfoCard = ({ userId, isSuperAdmin }: BusinessInfoCardProps
               onChange={(e) => setInformation(e.target.value)}
               rows={8}
               placeholder='{"revenue": 100000, "expenses": 50000}'
+              className="border-white/10 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/40"
             />
             <div className="flex gap-2">
-              <Button onClick={handleSave}>Save</Button>
-              <Button onClick={() => setEditing(false)} variant="outline">
+              <Button
+                onClick={handleSave}
+                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
+              >
+                Save
+              </Button>
+              <Button
+                onClick={() => setEditing(false)}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
                 Cancel
               </Button>
             </div>
@@ -120,16 +135,30 @@ export const BusinessInfoCard = ({ userId, isSuperAdmin }: BusinessInfoCardProps
             {businessInfo?.information && Object.keys(businessInfo.information).length > 0 ? (
               <ul className="space-y-2">
                 {Object.entries(businessInfo.information).map(([key, value]: [string, any]) => (
-                  <li key={key} className="flex justify-between">
-                    <span className="capitalize font-medium">{key.replace(/_/g, " ")}</span>
-                    <span>{typeof value === "number" ? `$${value.toLocaleString()}` : value}</span>
+                  <li
+                    key={key}
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                  >
+                    <span className="capitalize font-medium text-white">
+                      {key.replace(/_/g, " ")}
+                    </span>
+                    <span className="text-white/70">
+                      {typeof value === "number" ? `$${value.toLocaleString()}` : value}
+                    </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No business information recorded</p>
+              <p className="text-white/60">No business information recorded</p>
             )}
-            {isSuperAdmin && <Button onClick={() => setEditing(true)}>Edit Information</Button>}
+            {isSuperAdmin && (
+              <Button
+                onClick={() => setEditing(true)}
+                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
+              >
+                Edit Information
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

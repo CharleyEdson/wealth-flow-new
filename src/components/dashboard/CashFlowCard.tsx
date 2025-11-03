@@ -121,32 +121,40 @@ export function CashFlowCard() {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="pt-6">Loading...</CardContent>
+      <Card className="border-white/10 bg-white/5 text-white">
+        <CardContent className="pt-6 text-white/60">Loading...</CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="border-white/10 bg-white/5 text-white">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Cash Flow</CardTitle>
+        <CardTitle className="text-white">Cash Flow</CardTitle>
         <AddCashFlowModal onAdd={handleAddItem} accounts={accounts} />
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-4 rounded-lg bg-muted/50">
-            <div className="text-sm text-muted-foreground mb-1">Total Inflow</div>
-            <div className="text-2xl font-bold text-green-600">${totalInflow.toLocaleString()}</div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+            <div className="mb-1 text-sm text-white/60">Total Inflow</div>
+            <div className="text-2xl font-heading font-semibold text-emerald-400">
+              ${totalInflow.toLocaleString()}
+            </div>
           </div>
-          <div className="text-center p-4 rounded-lg bg-muted/50">
-            <div className="text-sm text-muted-foreground mb-1">Total Outflow</div>
-            <div className="text-2xl font-bold text-red-600">${totalOutflow.toLocaleString()}</div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+            <div className="mb-1 text-sm text-white/60">Total Outflow</div>
+            <div className="text-2xl font-heading font-semibold text-rose-400">
+              ${totalOutflow.toLocaleString()}
+            </div>
           </div>
-          <div className="text-center p-4 rounded-lg bg-muted/50">
-            <div className="text-sm text-muted-foreground mb-1">Net Cash Flow</div>
-            <div className={`text-2xl font-bold ${netCashFlow >= 0 ? "text-green-600" : "text-red-600"}`}>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+            <div className="mb-1 text-sm text-white/60">Net Cash Flow</div>
+            <div
+              className={`text-2xl font-heading font-semibold ${
+                netCashFlow >= 0 ? "text-emerald-400" : "text-rose-400"
+              }`}
+            >
               ${netCashFlow.toLocaleString()}
             </div>
           </div>
@@ -155,51 +163,64 @@ export function CashFlowCard() {
         {/* Savings Summary */}
         {(totalSavings > 0 || totalSavingsOutflow > 0) && (
           <>
-            <Separator />
+            <Separator className="bg-white/10" />
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-muted-foreground">Savings Overview</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <div className="text-xs text-muted-foreground mb-1">Account Savings Targets</div>
-                  <div className="text-xl font-bold">${totalSavings.toLocaleString()}</div>
+              <h3 className="text-sm font-semibold text-white/60">Savings Overview</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="mb-1 text-xs uppercase tracking-wide text-white/50">
+                    Account Savings Targets
+                  </div>
+                  <div className="text-xl font-heading font-semibold text-white">
+                    ${totalSavings.toLocaleString()}
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <div className="text-xs text-muted-foreground mb-1">Monthly Savings</div>
-                  <div className="text-xl font-bold">${totalSavingsOutflow.toLocaleString()}</div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="mb-1 text-xs uppercase tracking-wide text-white/50">
+                    Monthly Savings
+                  </div>
+                  <div className="text-xl font-heading font-semibold text-white">
+                    ${totalSavingsOutflow.toLocaleString()}
+                  </div>
                 </div>
               </div>
             </div>
           </>
         )}
 
-        <Separator />
+        <Separator className="bg-white/10" />
 
         {/* Inflows */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-green-600" />
-            <h3 className="font-semibold">Inflows</h3>
+            <TrendingUp className="h-5 w-5 text-emerald-400" />
+            <h3 className="font-semibold text-white">Inflows</h3>
           </div>
           {inflows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No inflows added yet</p>
+            <p className="text-sm text-white/60">No inflows added yet</p>
           ) : (
             <div className="space-y-2">
               {inflows.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3"
+                >
                   <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.inflow_category && formatCategory(item.inflow_category)} • {formatCategory(item.frequency)}
+                    <div className="font-medium text-white">{item.name}</div>
+                    <div className="text-xs text-white/60">
+                      {item.inflow_category && formatCategory(item.inflow_category)} •{" "}
+                      {formatCategory(item.frequency)}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-emerald-400">
                       ${Number(item.amount).toLocaleString()}
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteItem(item.id)}
+                      className="text-white/60 hover:text-white"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -210,34 +231,39 @@ export function CashFlowCard() {
           )}
         </div>
 
-        <Separator />
+        <Separator className="bg-white/10" />
 
         {/* Outflows */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-red-600" />
-            <h3 className="font-semibold">Outflows</h3>
+            <TrendingDown className="h-5 w-5 text-rose-400" />
+            <h3 className="font-semibold text-white">Outflows</h3>
           </div>
           {outflows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No outflows added yet</p>
+            <p className="text-sm text-white/60">No outflows added yet</p>
           ) : (
             <div className="space-y-2">
               {outflows.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3"
+                >
                   <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.outflow_category && formatCategory(item.outflow_category)} • {formatCategory(item.frequency)}
+                    <div className="font-medium text-white">{item.name}</div>
+                    <div className="text-xs text-white/60">
+                      {item.outflow_category && formatCategory(item.outflow_category)} •{" "}
+                      {formatCategory(item.frequency)}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-red-600">
+                    <span className="font-semibold text-rose-400">
                       ${Number(item.amount).toLocaleString()}
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteItem(item.id)}
+                      className="text-white/60 hover:text-white"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

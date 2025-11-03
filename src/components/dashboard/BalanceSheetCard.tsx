@@ -128,12 +128,13 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-white/10 bg-white/5 text-white">
         <CardHeader>
-          <CardTitle>Balance Sheet</CardTitle>
+          <CardTitle className="text-white">Balance Sheet</CardTitle>
+          <CardDescription className="text-white/60">Loading your financial structure...</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Loading...</p>
+          <p className="text-white/60">Loading...</p>
         </CardContent>
       </Card>
     );
@@ -141,36 +142,36 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
   return (
     <>
-      <Card>
+      <Card className="border-white/10 bg-white/5 text-white">
         <CardHeader>
-          <CardTitle>Balance Sheet</CardTitle>
-          <CardDescription>Your assets and liabilities</CardDescription>
+          <CardTitle className="text-white">Balance Sheet</CardTitle>
+          <CardDescription className="text-white/60">Your assets and liabilities</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg">Assets</h3>
+                  <h3 className="text-lg font-semibold text-white">Assets</h3>
                 </div>
                 {assets.length > 0 ? (
                   <ul className="space-y-2">
                     {assets.map((asset) => (
                       <li key={asset.id} className="flex items-center justify-between group">
                         <div className="flex-1">
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-white/50">
                             {getAccountTypeLabel(asset.type)}
                           </div>
-                          <div className="font-medium">{asset.name}</div>
+                          <div className="font-medium text-white">{asset.name}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">${asset.balance.toLocaleString()}</span>
+                          <span className="font-medium text-white">${asset.balance.toLocaleString()}</span>
                           {isSuperAdmin && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteAccount(asset.id)}
-                              className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -180,34 +181,34 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-muted-foreground">No assets recorded</p>
+                  <p className="text-white/55">No assets recorded</p>
                 )}
-                <p className="mt-3 pt-3 border-t font-bold">
+                <p className="mt-3 border-t border-white/10 pt-3 font-bold text-white">
                   Total: ${calculateTotal(assets).toLocaleString()}
                 </p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg">Liabilities</h3>
+                  <h3 className="text-lg font-semibold text-white">Liabilities</h3>
                 </div>
                 {liabilities.length > 0 ? (
                   <ul className="space-y-2">
                     {liabilities.map((liability) => (
                       <li key={liability.id} className="flex items-center justify-between group">
                         <div className="flex-1">
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-white/50">
                             {getAccountTypeLabel(liability.type)}
                           </div>
-                          <div className="font-medium">{liability.name}</div>
+                          <div className="font-medium text-white">{liability.name}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">${liability.balance.toLocaleString()}</span>
+                          <span className="font-medium text-white">${liability.balance.toLocaleString()}</span>
                           {isSuperAdmin && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteAccount(liability.id)}
-                              className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -217,16 +218,21 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-muted-foreground">No liabilities recorded</p>
+                  <p className="text-white/55">No liabilities recorded</p>
                 )}
-                <p className="mt-3 pt-3 border-t font-bold">
+                <p className="mt-3 border-t border-white/10 pt-3 font-bold text-white">
                   Total: ${calculateTotal(liabilities).toLocaleString()}
                 </p>
               </div>
             </div>
             
             {isSuperAdmin && (
-              <Button onClick={() => setModalOpen(true)}>Add Account</Button>
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
+              >
+                Add Account
+              </Button>
             )}
           </div>
         </CardContent>

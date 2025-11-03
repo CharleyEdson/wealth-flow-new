@@ -157,13 +157,13 @@ export function RatiosCard({ userId }: { userId: string }) {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-white/10 bg-white/5">
         <CardHeader>
-          <CardTitle>Financial Ratios</CardTitle>
-          <CardDescription>Key financial health indicators</CardDescription>
+          <CardTitle className="text-white">Financial Ratios</CardTitle>
+          <CardDescription className="text-white/60">Key financial health indicators</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground">Loading ratios...</div>
+          <div className="text-center text-white/60">Loading ratios...</div>
         </CardContent>
       </Card>
     );
@@ -171,34 +171,36 @@ export function RatiosCard({ userId }: { userId: string }) {
 
   return (
     <>
-      <Card>
+      <Card className="border-white/10 bg-white/5">
         <CardHeader>
-          <CardTitle>Financial Ratios</CardTitle>
-          <CardDescription>Click on any ratio to see calculation details</CardDescription>
+          <CardTitle className="text-white">Financial Ratios</CardTitle>
+          <CardDescription className="text-white/60">
+            Click on any ratio to see calculation details
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {/* Savings Ratio Square */}
             <button
               onClick={() => setSelectedRatio("savings")}
-              className="aspect-square p-6 rounded-lg border-2 border-border bg-card hover:bg-accent hover:border-primary transition-all duration-200 flex flex-col items-center justify-center gap-3 group"
+              className="group aspect-square rounded-2xl border border-white/10 bg-white/5 p-6 transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/15"
             >
-              <TrendingUp className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+              <TrendingUp className="h-8 w-8 text-primary transition-transform duration-200 group-hover:scale-110" />
               <div className="text-center">
-                <div className="text-3xl font-bold">{savingsRatio.toFixed(1)}%</div>
-                <div className="text-sm text-muted-foreground mt-1">Savings Ratio</div>
+                <div className="text-3xl font-heading font-semibold text-white">{savingsRatio.toFixed(1)}%</div>
+                <div className="mt-1 text-sm text-white/60">Savings Ratio</div>
               </div>
             </button>
 
             {/* Burn Rate Square */}
             <button
               onClick={() => setSelectedRatio("burnRate")}
-              className="aspect-square p-6 rounded-lg border-2 border-border bg-card hover:bg-accent hover:border-primary transition-all duration-200 flex flex-col items-center justify-center gap-3 group"
+              className="group aspect-square rounded-2xl border border-white/10 bg-white/5 p-6 transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/15"
             >
-              <TrendingUp className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+              <TrendingUp className="h-8 w-8 text-primary transition-transform duration-200 group-hover:scale-110" />
               <div className="text-center">
-                <div className="text-3xl font-bold">{burnRate.toFixed(1)}%</div>
-                <div className="text-sm text-muted-foreground mt-1">Burn Rate</div>
+                <div className="text-3xl font-heading font-semibold text-white">{burnRate.toFixed(1)}%</div>
+                <div className="mt-1 text-sm text-white/60">Burn Rate</div>
               </div>
             </button>
           </div>
@@ -207,13 +209,13 @@ export function RatiosCard({ userId }: { userId: string }) {
 
       {/* Savings Ratio Details Dialog */}
       <Dialog open={selectedRatio === "savings"} onOpenChange={() => setSelectedRatio(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-white/10 bg-white/10 text-white backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-white">
               <TrendingUp className="h-5 w-5 text-primary" />
               Savings Ratio Calculation
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-white/60">
               Shows how much of your income you're saving
             </DialogDescription>
           </DialogHeader>
@@ -306,13 +308,13 @@ export function RatiosCard({ userId }: { userId: string }) {
 
       {/* Burn Rate Details Dialog */}
       <Dialog open={selectedRatio === "burnRate"} onOpenChange={() => setSelectedRatio(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-white/10 bg-white/10 text-white backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-white">
               <TrendingUp className="h-5 w-5 text-primary" />
               Burn Rate Calculation
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-white/60">
               Shows what percentage of income is spent on expenses (excluding debt payments)
             </DialogDescription>
           </DialogHeader>

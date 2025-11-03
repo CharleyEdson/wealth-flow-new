@@ -41,36 +41,56 @@ export const NetWorthChart = ({ userId }: NetWorthChartProps) => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-white/10 bg-white/5">
         <CardHeader>
-          <CardTitle>Net Worth Over Time</CardTitle>
+          <CardTitle className="text-white">Net Worth Over Time</CardTitle>
+          <CardDescription className="text-white/60">
+            Tracking momentum across the last horizon
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Loading...</p>
+          <p className="text-white/60">Loading...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="border-white/10 bg-white/5">
       <CardHeader>
-        <CardTitle>Net Worth Over Time</CardTitle>
-        <CardDescription>Track your financial growth month by month</CardDescription>
+        <CardTitle className="text-white">Net Worth Over Time</CardTitle>
+        <CardDescription className="text-white/60">
+          Track your financial growth month by month
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
-              <Line type="monotone" dataKey="netWorth" stroke="hsl(var(--primary))" strokeWidth={2} />
+              <CartesianGrid stroke="rgba(148, 163, 184, 0.2)" />
+              <XAxis dataKey="date" stroke="rgba(226,232,240,0.5)" tick={{ fill: "rgba(226,232,240,0.6)" }} />
+              <YAxis stroke="rgba(226,232,240,0.5)" tick={{ fill: "rgba(226,232,240,0.6)" }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(15, 23, 42, 0.9)",
+                  borderRadius: "16px",
+                  border: "1px solid rgba(148, 163, 184, 0.2)",
+                  color: "#e2e8f0",
+                }}
+                formatter={(value: number) => `$${value.toLocaleString()}`}
+              />
+              <Line
+                type="monotone"
+                dataKey="netWorth"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{ r: 6 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-muted-foreground">No history data available yet</p>
+          <p className="text-white/60">No history data available yet</p>
         )}
       </CardContent>
     </Card>

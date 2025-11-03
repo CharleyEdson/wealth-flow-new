@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export type AccountType = 
   | "checking_account"
@@ -65,6 +66,8 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
   const [name, setName] = useState("");
   const [balance, setBalance] = useState("");
   const [savingsAmount, setSavingsAmount] = useState("");
+  const inputStyles =
+    "border-white/15 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0";
 
   const handleAdd = () => {
     if (!accountType || !name || !balance) return;
@@ -88,44 +91,56 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] border-white/10 bg-white/10 text-white backdrop-blur-2xl">
         <DialogHeader>
-          <DialogTitle>Add Account</DialogTitle>
+          <DialogTitle className="text-xl font-heading text-white">Add Account</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
           <div className="flex gap-2">
             <Button
               type="button"
-              variant={category === "asset" ? "default" : "outline"}
+              variant={category === "asset" ? "hero" : "outline"}
               onClick={() => {
                 setCategory("asset");
                 setAccountType("");
               }}
-              className="flex-1"
+              className={cn(
+                "flex-1",
+                category === "asset"
+                  ? ""
+                  : "border-white/20 text-white hover:bg-white/10 hover:text-white"
+              )}
             >
               Asset
             </Button>
             <Button
               type="button"
-              variant={category === "debt" ? "default" : "outline"}
+              variant={category === "debt" ? "hero" : "outline"}
               onClick={() => {
                 setCategory("debt");
                 setAccountType("");
               }}
-              className="flex-1"
+              className={cn(
+                "flex-1",
+                category === "debt"
+                  ? ""
+                  : "border-white/20 text-white hover:bg-white/10 hover:text-white"
+              )}
             >
               Debt
             </Button>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="account-type">Account Type</Label>
+            <Label htmlFor="account-type" className="text-sm font-medium text-white/70">
+              Account Type
+            </Label>
             <Select value={accountType} onValueChange={(value) => setAccountType(value as AccountType)}>
-              <SelectTrigger id="account-type">
+              <SelectTrigger id="account-type" className="border-white/15 bg-white/10 text-white">
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="border-white/10 bg-slate-950/95 text-white backdrop-blur-xl">
                 {accountTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
@@ -136,17 +151,20 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="account-name">Account Name</Label>
+            <Label htmlFor="account-name" className="text-sm font-medium text-white/70">
+              Account Name
+            </Label>
             <Input
               id="account-name"
               placeholder="e.g., Chase Checking"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className={inputStyles}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="account-balance">
+            <Label htmlFor="account-balance" className="text-sm font-medium text-white/70">
               {category === "asset" ? "Balance/Value" : "Balance Owed"}
             </Label>
             <Input
@@ -156,11 +174,14 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
               value={balance}
               onChange={(e) => setBalance(e.target.value)}
               step="0.01"
+              className={inputStyles}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="savings-amount">Monthly Savings Amount (Optional)</Label>
+            <Label htmlFor="savings-amount" className="text-sm font-medium text-white/70">
+              Monthly Savings Amount (Optional)
+            </Label>
             <Input
               id="savings-amount"
               type="number"
@@ -168,16 +189,22 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
               value={savingsAmount}
               onChange={(e) => setSavingsAmount(e.target.value)}
               step="0.01"
+              className={inputStyles}
             />
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="border-white/20 text-white hover:bg-white/10"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleAdd}
               disabled={!accountType || !name || !balance}
+              variant="hero"
             >
               Add Account
             </Button>
