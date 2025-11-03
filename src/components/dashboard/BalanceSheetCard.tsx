@@ -140,6 +140,10 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
     );
   }
 
+  const totalAssets = calculateTotal(assets);
+  const totalLiabilities = calculateTotal(liabilities);
+  const netWorth = totalAssets - totalLiabilities;
+
   return (
     <>
       <Card className="border-white/10 bg-white/5 text-white">
@@ -184,7 +188,7 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
                   <p className="text-white/55">No assets recorded</p>
                 )}
                 <p className="mt-3 border-t border-white/10 pt-3 font-bold text-white">
-                  Total: ${calculateTotal(assets).toLocaleString()}
+                  Total: ${totalAssets.toLocaleString()}
                 </p>
               </div>
               <div>
@@ -221,11 +225,33 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
                   <p className="text-white/55">No liabilities recorded</p>
                 )}
                 <p className="mt-3 border-t border-white/10 pt-3 font-bold text-white">
-                  Total: ${calculateTotal(liabilities).toLocaleString()}
+                  Total: ${totalLiabilities.toLocaleString()}
                 </p>
               </div>
             </div>
             
+            <div className="grid gap-4 rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 sm:grid-cols-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Total Assets</p>
+                <p className="mt-2 text-2xl font-heading font-semibold text-white">
+                  ${totalAssets.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Total Liabilities</p>
+                <p className="mt-2 text-2xl font-heading font-semibold text-white">
+                  ${totalLiabilities.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Net Worth</p>
+                <p className="mt-2 text-3xl font-heading font-semibold text-white">
+                  ${netWorth.toLocaleString()}
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-wide text-white/60">Assets minus liabilities</p>
+              </div>
+            </div>
+
             {isSuperAdmin && (
               <Button
                 onClick={() => setModalOpen(true)}
