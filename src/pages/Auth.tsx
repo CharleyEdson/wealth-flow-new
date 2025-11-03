@@ -19,6 +19,41 @@ const Auth = () => {
   const inputStyles =
     "border-white/10 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0";
 
+  const parseSignupError = (error: any) => {
+    const fallbackMessage = "Signup failed. Please verify your details and try again.";
+
+    if (!error) return fallbackMessage;
+
+    if (error?.message && error.message !== "Edge function returned a non-2xx status code") {
+      return error.message;
+    }
+
+    const responseContext = error?.context?.response ?? error?.context;
+    const possibleBodies = [
+      responseContext?.error,
+      responseContext?.body,
+      responseContext?.data,
+      error?.context?.body,
+    ].filter(Boolean);
+
+    for (const body of possibleBodies) {
+      if (typeof body === "string") {
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed?.error) return parsed.error;
+          if (parsed?.message) return parsed.message;
+        } catch {
+          if (body.trim()) return body;
+        }
+      } else if (body && typeof body === "object") {
+        if (typeof body.error === "string") return body.error;
+        if (typeof body.message === "string") return body.message;
+      }
+    }
+
+    return fallbackMessage;
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
@@ -84,6 +119,8 @@ const Auth = () => {
       }
     } catch (error: any) {
       secureLogger.error(error, 'Signup', error.message || "Signup failed");
+      const message = parseSignupError(error);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
