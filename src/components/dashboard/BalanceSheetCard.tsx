@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AddAccountModal, Account, AccountType } from "./AddAccountModal";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { secureLogger } from "@/lib/secureLogger";
 
 interface BalanceSheetCardProps {
@@ -17,6 +17,7 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
   const [liabilities, setLiabilities] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined);
 
   useEffect(() => {
     fetchAccounts();
@@ -81,6 +82,35 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
       fetchAccounts();
     } catch (error: any) {
       toast.error(error.message || "Failed to add account");
+    }
+  };
+
+  const handleEditAccount = async (account: Account) => {
+    try {
+      const isAsset = [
+        "checking_account", "savings_account", "brokerage_account", "ira", "roth_ira",
+        "traditional_401k", "roth_401k", "primary_residence", "rental_property", 
+        "business", "other_asset"
+      ].includes(account.type);
+
+      const { error } = await supabase
+        .from("accounts")
+        .update({
+          account_type: account.type,
+          name: account.name,
+          balance: account.balance,
+          category: isAsset ? "asset" : "liability",
+          savings_amount: account.savingsAmount || 0,
+        })
+        .eq("id", account.id);
+
+      if (error) throw error;
+
+      toast.success("Account updated");
+      setEditingAccount(undefined);
+      fetchAccounts();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update account");
     }
   };
 
@@ -171,14 +201,27 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-white">${asset.balance.toLocaleString()}</span>
                           {isSuperAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAccount(asset.id)}
-                              className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingAccount(asset);
+                                  setModalOpen(true);
+                                }}
+                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteAccount(asset.id)}
+                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </li>
@@ -208,14 +251,27 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-white">${liability.balance.toLocaleString()}</span>
                           {isSuperAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAccount(liability.id)}
-                              className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingAccount(liability);
+                                  setModalOpen(true);
+                                }}
+                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteAccount(liability.id)}
+                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </li>
@@ -254,7 +310,10 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
             {isSuperAdmin && (
               <Button
-                onClick={() => setModalOpen(true)}
+                onClick={() => {
+                  setEditingAccount(undefined);
+                  setModalOpen(true);
+                }}
                 className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
               >
                 Add Account
@@ -266,8 +325,13 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
       <AddAccountModal
         open={modalOpen}
-        onOpenChange={setModalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setEditingAccount(undefined);
+        }}
         onAdd={handleAddAccount}
+        editAccount={editingAccount}
+        onEdit={handleEditAccount}
       />
     </>
   );

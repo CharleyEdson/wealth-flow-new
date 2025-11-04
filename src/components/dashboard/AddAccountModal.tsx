@@ -36,6 +36,8 @@ interface AddAccountModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (account: Omit<Account, "id">) => void;
+  editAccount?: Account;
+  onEdit?: (account: Account) => void;
 }
 
 const assetTypes: { value: AccountType; label: string }[] = [
@@ -60,24 +62,40 @@ const debtTypes: { value: AccountType; label: string }[] = [
   { value: "other_loan", label: "Other Loan" },
 ];
 
-export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalProps) => {
-  const [category, setCategory] = useState<"asset" | "debt">("asset");
-  const [accountType, setAccountType] = useState<AccountType | "">("");
-  const [name, setName] = useState("");
-  const [balance, setBalance] = useState("");
-  const [savingsAmount, setSavingsAmount] = useState("");
+export const AddAccountModal = ({ open, onOpenChange, onAdd, editAccount, onEdit }: AddAccountModalProps) => {
+  const isEditing = !!editAccount;
+  
+  const [category, setCategory] = useState<"asset" | "debt">(
+    editAccount && ["credit_card", "student_loan", "mortgage", "auto_loan", "other_loan"].includes(editAccount.type) 
+      ? "debt" 
+      : "asset"
+  );
+  const [accountType, setAccountType] = useState<AccountType | "">(editAccount?.type || "");
+  const [name, setName] = useState(editAccount?.name || "");
+  const [balance, setBalance] = useState(editAccount?.balance.toString() || "");
+  const [savingsAmount, setSavingsAmount] = useState(editAccount?.savingsAmount?.toString() || "");
   const inputStyles =
     "border-white/15 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0";
 
-  const handleAdd = () => {
+  const handleSubmit = () => {
     if (!accountType || !name || !balance) return;
     
-    onAdd({
-      type: accountType as AccountType,
-      name,
-      balance: parseFloat(balance),
-      savingsAmount: savingsAmount ? parseFloat(savingsAmount) : 0,
-    });
+    if (isEditing && onEdit && editAccount) {
+      onEdit({
+        id: editAccount.id,
+        type: accountType as AccountType,
+        name,
+        balance: parseFloat(balance),
+        savingsAmount: savingsAmount ? parseFloat(savingsAmount) : 0,
+      });
+    } else {
+      onAdd({
+        type: accountType as AccountType,
+        name,
+        balance: parseFloat(balance),
+        savingsAmount: savingsAmount ? parseFloat(savingsAmount) : 0,
+      });
+    }
 
     // Reset form
     setAccountType("");
@@ -93,7 +111,9 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] border-white/10 bg-white/10 text-white backdrop-blur-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-heading text-white">Add Account</DialogTitle>
+          <DialogTitle className="text-xl font-heading text-white">
+            {isEditing ? "Edit Account" : "Add Account"}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
@@ -202,11 +222,11 @@ export const AddAccountModal = ({ open, onOpenChange, onAdd }: AddAccountModalPr
               Cancel
             </Button>
             <Button 
-              onClick={handleAdd}
+              onClick={handleSubmit}
               disabled={!accountType || !name || !balance}
               variant="hero"
             >
-              Add Account
+              {isEditing ? "Save Changes" : "Add Account"}
             </Button>
           </div>
         </div>
