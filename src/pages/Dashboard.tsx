@@ -206,7 +206,7 @@ const Dashboard = () => {
           <div className="grid gap-6 xl:grid-cols-2">
             <BalanceSheetCard userId={displayUserId} isSuperAdmin={isSuperAdmin} />
             <CashFlowAllocationCard userId={displayUserId} />
-            <CashFlowCard />
+            <CashFlowCard userId={displayUserId} />
             <StatementOfPurposeCard userId={displayUserId} isSuperAdmin={isSuperAdmin} />
             <BusinessInfoCard userId={displayUserId} isSuperAdmin={isSuperAdmin} />
           </div>

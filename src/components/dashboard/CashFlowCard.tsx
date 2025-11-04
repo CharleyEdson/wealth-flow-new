@@ -26,25 +26,28 @@ interface Account {
   savings_amount?: number;
 }
 
-export function CashFlowCard() {
+interface CashFlowCardProps {
+  userId: string;
+}
+
+export function CashFlowCard({ userId }: CashFlowCardProps) {
   const [cashFlowItems, setCashFlowItems] = useState<CashFlowItem[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       // Fetch cash flow items
       const { data: itemsData, error: itemsError } = await supabase
         .from("cash_flow_items")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (itemsError) throw itemsError;
@@ -53,7 +56,7 @@ export function CashFlowCard() {
       const { data: accountsData, error: accountsError } = await supabase
         .from("accounts")
         .select("id, name, savings_amount")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (accountsError) throw accountsError;
 
@@ -68,12 +71,9 @@ export function CashFlowCard() {
 
   const handleAddItem = async (item: Omit<CashFlowItem, "id">) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { error } = await supabase.from("cash_flow_items").insert({
         ...item,
-        user_id: user.id,
+        user_id: userId,
       });
 
       if (error) throw error;
