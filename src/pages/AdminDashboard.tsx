@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { secureLogger } from "@/lib/secureLogger";
-import { Trash2, Eye, UserPlus } from "lucide-react";
+import { Trash2, Eye, UserPlus, FileText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,6 +118,10 @@ const AdminDashboard = () => {
     navigate(`/home?viewAs=${userId}`);
   };
 
+  const handleViewPlan = (userId: string) => {
+    navigate(`/plan?viewAs=${userId}`);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
@@ -214,7 +218,16 @@ const AdminDashboard = () => {
                           className="text-white/60 hover:text-white hover:bg-white/10"
                         >
                           <Eye className="h-4 w-4 mr-2" />
-                          View Dashboard
+                          Dashboard
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewPlan(user.user_id)}
+                          className="text-white/60 hover:text-white hover:bg-white/10"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Financial Plan
                         </Button>
                         <Button
                           variant="ghost"

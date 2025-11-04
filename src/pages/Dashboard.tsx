@@ -100,6 +100,13 @@ const Dashboard = () => {
             )}
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate(`/plan${viewingUserId ? `?viewAs=${viewingUserId}` : ''}`)}
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Financial Plan
+            </Button>
             {isSuperAdmin && (
               <>
                 <Button
