@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,9 +15,12 @@ import { RatiosCard } from "@/components/dashboard/RatiosCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [viewingUserEmail, setViewingUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -42,7 +45,23 @@ const Dashboard = () => {
         .eq("role", "super_admin")
         .maybeSingle();
 
-      setIsSuperAdmin(!!roleData);
+      const isAdmin = !!roleData;
+      setIsSuperAdmin(isAdmin);
+
+      // Check if viewing as another user (super admin only)
+      const viewAsParam = searchParams.get("viewAs");
+      if (viewAsParam && isAdmin) {
+        setViewingUserId(viewAsParam);
+        
+        // Fetch the user's email for display
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("user_id", viewAsParam)
+          .maybeSingle();
+        
+        setViewingUserEmail(profileData?.email || null);
+      }
     } catch (error) {
       secureLogger.error(error, 'Auth check', 'Failed to verify authentication');
     } finally {
@@ -64,6 +83,9 @@ const Dashboard = () => {
     );
   }
 
+  const displayUserId = viewingUserId || user?.id;
+  const isViewingAsAnother = !!viewingUserId;
+
   return (
     <div className="min-h-screen text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
@@ -71,12 +93,26 @@ const Dashboard = () => {
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-white/50">Wealthflow OS</p>
             <h1 className="text-2xl font-heading font-semibold text-white">Client Command Center</h1>
+            {isViewingAsAnother && (
+              <p className="text-sm text-primary mt-1">
+                Viewing as: {viewingUserEmail}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {isSuperAdmin && (
-              <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/80 sm:inline-flex">
-                Super Admin
-              </span>
+              <>
+                <Button
+                  onClick={() => navigate("/admin")}
+                  variant="outline"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Admin Dashboard
+                </Button>
+                <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/80 sm:inline-flex">
+                  Super Admin
+                </span>
+              </>
             )}
             {user?.email && (
               <span className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm text-white/70 sm:inline-flex">
@@ -159,20 +195,20 @@ const Dashboard = () => {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="grid gap-6">
-              <NetWorthCard userId={user?.id} />
-              <NetWorthChart userId={user?.id} />
+              <NetWorthCard userId={displayUserId} />
+              <NetWorthChart userId={displayUserId} />
             </div>
             <div className="grid gap-6">
-              <RatiosCard userId={user?.id} />
+              <RatiosCard userId={displayUserId} />
             </div>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <BalanceSheetCard userId={user?.id} isSuperAdmin={isSuperAdmin} />
-            <CashFlowAllocationCard userId={user?.id} />
+            <BalanceSheetCard userId={displayUserId} isSuperAdmin={isSuperAdmin} />
+            <CashFlowAllocationCard userId={displayUserId} />
             <CashFlowCard />
-            <StatementOfPurposeCard userId={user?.id} isSuperAdmin={isSuperAdmin} />
-            <BusinessInfoCard userId={user?.id} isSuperAdmin={isSuperAdmin} />
+            <StatementOfPurposeCard userId={displayUserId} isSuperAdmin={isSuperAdmin} />
+            <BusinessInfoCard userId={displayUserId} isSuperAdmin={isSuperAdmin} />
           </div>
         </div>
       </main>
