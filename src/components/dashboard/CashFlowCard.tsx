@@ -110,9 +110,32 @@ export function CashFlowCard({ userId }: CashFlowCardProps) {
 
   const inflows = cashFlowItems.filter((item) => item.flow_type === "inflow");
   const outflows = cashFlowItems.filter((item) => item.flow_type === "outflow");
-  
-  const totalInflow = inflows.reduce((sum, item) => sum + Number(item.amount), 0);
-  const totalOutflow = outflows.reduce((sum, item) => sum + Number(item.amount), 0);
+
+  const normalize = (amount: number, frequency?: string) => {
+    switch (frequency) {
+      case "weekly":
+        return amount * 52;
+      case "bi-weekly":
+        return amount * 26;
+      case "monthly":
+        return amount * 12;
+      case "quarterly":
+        return amount * 4;
+      case "annual":
+        return amount;
+      default:
+        return amount * 12;
+    }
+  };
+
+  const totalInflow = inflows.reduce(
+    (sum, item) => sum + normalize(Number(item.amount), item.frequency),
+    0,
+  );
+  const totalOutflow = outflows.reduce(
+    (sum, item) => sum + normalize(Number(item.amount), item.frequency),
+    0,
+  );
   const netCashFlow = totalInflow - totalOutflow;
 
   const totalSavings = accounts.reduce((sum, account) => sum + Number(account.savings_amount || 0), 0);
