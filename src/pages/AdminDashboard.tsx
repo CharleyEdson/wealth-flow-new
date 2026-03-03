@@ -132,6 +132,10 @@ const AdminDashboard = () => {
     navigate(`/plan?viewAs=${userId}`);
   };
 
+  const handleViewPlanV2 = (userId: string) => {
+    navigate(`/plan-v2?viewAs=${userId}`);
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreatingUser(true);
@@ -270,6 +274,15 @@ const AdminDashboard = () => {
                         >
                           <FileText className="h-4 w-4 mr-2" />
                           Financial Plan
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewPlanV2(user.user_id)}
+                          className="text-white/60 hover:text-white hover:bg-white/10"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Plan V2
                         </Button>
                         <Button
                           variant="ghost"

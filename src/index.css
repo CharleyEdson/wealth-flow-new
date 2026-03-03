@@ -139,3 +139,46 @@ All colors MUST be HSL.
     }
   }
 }
+
+@media print {
+  @page {
+    size: Letter portrait;
+    margin: 0.5in;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .plan-v2-no-print {
+    display: none !important;
+  }
+
+  .plan-v2-root,
+  .plan-v2-root * {
+    color: #111827 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .plan-v2-root .bg-white\/5,
+  .plan-v2-root .bg-slate-950\/80,
+  .plan-v2-root .bg-gradient-to-br,
+  .plan-v2-root .from-slate-950,
+  .plan-v2-root .via-slate-900,
+  .plan-v2-root .to-slate-950 {
+    background: #ffffff !important;
+  }
+
+  .plan-v2-root .border-white\/10,
+  .plan-v2-root .border-white\/20 {
+    border-color: #d1d5db !important;
+  }
+
+  .plan-v2-print-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}

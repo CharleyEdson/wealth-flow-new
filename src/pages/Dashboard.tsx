@@ -107,6 +107,13 @@ const Dashboard = () => {
             >
               Financial Plan
             </Button>
+            <Button
+              onClick={() => navigate(`/plan-v2${viewingUserId ? `?viewAs=${viewingUserId}` : ""}`)}
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Financial Plan V2
+            </Button>
             {isSuperAdmin && (
               <>
                 <Button
