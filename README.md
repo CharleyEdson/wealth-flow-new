@@ -60,6 +60,12 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Supabase Recovery
+
+If the Supabase project is deleted and you need to reconnect to a new backend, follow:
+
+- `SUPABASE_REBUILD.md`
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/8f238887-8c2d-4f6f-8674-54400abdde1c) and click on Share -> Publish.

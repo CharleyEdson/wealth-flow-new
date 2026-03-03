@@ -15,44 +15,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const inputStyles =
     "border-white/10 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0";
-
-  const parseSignupError = (error: any) => {
-    const fallbackMessage = "Signup failed. Please verify your details and try again.";
-
-    if (!error) return fallbackMessage;
-
-    if (error?.message && error.message !== "Edge function returned a non-2xx status code") {
-      return error.message;
-    }
-
-    const responseContext = error?.context?.response ?? error?.context;
-    const possibleBodies = [
-      responseContext?.error,
-      responseContext?.body,
-      responseContext?.data,
-      error?.context?.body,
-    ].filter(Boolean);
-
-    for (const body of possibleBodies) {
-      if (typeof body === "string") {
-        try {
-          const parsed = JSON.parse(body);
-          if (parsed?.error) return parsed.error;
-          if (parsed?.message) return parsed.message;
-        } catch {
-          if (body.trim()) return body;
-        }
-      } else if (body && typeof body === "object") {
-        if (typeof body.error === "string") return body.error;
-        if (typeof body.message === "string") return body.message;
-      }
-    }
-
-    return fallbackMessage;
-  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -94,33 +58,29 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Call secure edge function for atomic signup
-      const { data, error } = await supabase.functions.invoke('secure-signup', {
-        body: {
-          email,
-          password,
-          fullName,
-          inviteCode,
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
       });
 
       if (error) throw error;
-      
-      if (data?.error) {
-        throw new Error(data.error);
+
+      if (data?.session) {
+        toast.success("Account created. You are now signed in.");
+      } else {
+        toast.success("Account created. Check your email to confirm your account.");
+        setIsLogin(true);
       }
 
-      if (data?.success) {
-        toast.success(data.message || "Account created successfully!");
-        // Switch to login view
-        setIsLogin(true);
-        setPassword("");
-        setInviteCode("");
-      }
+      setPassword("");
     } catch (error: any) {
       secureLogger.error(error, 'Signup', error.message || "Signup failed");
-      const message = parseSignupError(error);
-      toast.error(message);
+      toast.error(error?.message || "Signup failed. Please verify your details and try again.");
     } finally {
       setLoading(false);
     }
@@ -184,7 +144,7 @@ const Auth = () => {
                 <CardDescription className="text-white/60">
                   {isLogin
                     ? "Sign in to orchestrate every client relationship from a single pane of glass."
-                    : "Join the private beta with your invite code and unlock the Wealthflow command center."}
+                    : "Create your account to unlock the Wealthflow command center."}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 text-sm text-white/60">
@@ -241,23 +201,6 @@ const Auth = () => {
                   />
                 </div>
 
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="inviteCode" className="text-sm font-medium text-white/70">
-                      Invite Code
-                    </Label>
-                    <Input
-                      id="inviteCode"
-                      type="text"
-                      value={inviteCode}
-                      onChange={(e) => setInviteCode(e.target.value)}
-                      required
-                      placeholder="Enter your private code"
-                      className={inputStyles}
-                    />
-                  </div>
-                )}
-
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_25px_45px_-20px_rgba(99,102,241,0.65)] transition duration-200 hover:scale-[1.01] hover:shadow-[0_30px_60px_-25px_rgba(56,189,248,0.6)]"
@@ -274,7 +217,7 @@ const Auth = () => {
                   className="font-medium text-white transition hover:text-white/100"
                 >
                   {isLogin
-                    ? "Don't have an account? Request access"
+                    ? "Don't have an account? Create one"
                     : "Already onboarded? Log in instead"}
                 </button>
               </div>
