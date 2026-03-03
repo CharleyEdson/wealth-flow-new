@@ -65,6 +65,7 @@ supabase secrets set SUPABASE_URL=https://your_new_project_ref.supabase.co
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 supabase functions deploy secure-signup
 supabase functions deploy calculate-monthly-net-worth
+supabase functions deploy admin-create-user
 ```
 
 ## 6) Bootstrap first super admin

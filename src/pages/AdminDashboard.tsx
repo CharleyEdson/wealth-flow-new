@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { secureLogger } from "@/lib/secureLogger";
 import { Trash2, Eye, UserPlus, FileText } from "lucide-react";
@@ -31,6 +35,12 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"client" | "super_admin">("client");
 
   useEffect(() => {
     checkAdminAccess();
@@ -122,6 +132,38 @@ const AdminDashboard = () => {
     navigate(`/plan?viewAs=${userId}`);
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingUser(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          email: newUserEmail.trim(),
+          password: newUserPassword,
+          fullName: newUserName.trim(),
+          role: newUserRole,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("User created successfully");
+      setAddUserOpen(false);
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserName("");
+      setNewUserRole("client");
+      fetchUsers();
+    } catch (error: any) {
+      secureLogger.error(error, "Create user", "Failed to create user");
+      toast.error(error?.message || "Failed to create user");
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
@@ -174,7 +216,7 @@ const AdminDashboard = () => {
               </div>
               <Button
                 variant="hero"
-                onClick={() => toast.info("User creation requires backend implementation")}
+                onClick={() => setAddUserOpen(true)}
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add User
@@ -269,6 +311,87 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
+        <DialogContent className="border-white/10 bg-slate-950/95 text-white backdrop-blur-xl sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-user-name" className="text-white/70">
+                Full Name
+              </Label>
+              <Input
+                id="new-user-name"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                placeholder="Jordan Blake"
+                required
+                className="border-white/15 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-email" className="text-white/70">
+                Email
+              </Label>
+              <Input
+                id="new-user-email"
+                type="email"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="user@example.com"
+                required
+                className="border-white/15 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-password" className="text-white/70">
+                Temporary Password
+              </Label>
+              <Input
+                id="new-user-password"
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                minLength={8}
+                required
+                className="border-white/15 bg-white/10 text-white placeholder:text-white/50 focus-visible:border-primary/60 focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/70">Role</Label>
+              <Select
+                value={newUserRole}
+                onValueChange={(value) => setNewUserRole(value as "client" | "super_admin")}
+              >
+                <SelectTrigger className="border-white/15 bg-white/10 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-white/10 bg-slate-950/95 text-white backdrop-blur-xl">
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+                onClick={() => setAddUserOpen(false)}
+                disabled={creatingUser}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="hero" disabled={creatingUser}>
+                {creatingUser ? "Creating..." : "Create User"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
