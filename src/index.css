@@ -191,3 +191,53 @@ All colors MUST be HSL.
     margin-bottom: 16px;
   }
 }
+
+/* Readability bridge:
+   Existing pages still use many hardcoded dark-theme utility classes
+   (text-white, bg-white/5, etc.). These overrides remap them to the new
+   light brand palette so content remains legible without rewriting each page.
+*/
+@layer utilities {
+  .text-white {
+    color: hsl(234 20% 24%) !important;
+  }
+
+  .text-white\/80 {
+    color: hsl(234 18% 30%) !important;
+  }
+
+  .text-white\/70 {
+    color: hsl(234 16% 35%) !important;
+  }
+
+  .text-white\/65,
+  .text-white\/60 {
+    color: hsl(234 14% 42%) !important;
+  }
+
+  .text-white\/55,
+  .text-white\/50 {
+    color: hsl(234 12% 48%) !important;
+  }
+
+  .text-white\/40 {
+    color: hsl(234 10% 56%) !important;
+  }
+
+  .border-white\/20 {
+    border-color: hsl(17 24% 72%) !important;
+  }
+
+  .border-white\/15,
+  .border-white\/10 {
+    border-color: hsl(17 22% 78%) !important;
+  }
+
+  .bg-white\/10 {
+    background-color: hsl(17 22% 84% / 0.7) !important;
+  }
+
+  .bg-white\/5 {
+    background-color: hsl(17 22% 86% / 0.58) !important;
+  }
+}
