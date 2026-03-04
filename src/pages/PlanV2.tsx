@@ -10,6 +10,7 @@ import { SectionEditor } from "@/components/plan-v2/SectionEditor";
 import { SectionRenderer } from "@/components/plan-v2/SectionRenderer";
 import { BenchmarkChart } from "@/components/plan-v2/BenchmarkChart";
 import { getBenchmarkTargetForAge } from "@/lib/benchmarkTargets";
+import { resolveDerivedPlanData } from "@/lib/planDataResolvers";
 import {
   createDefaultFinancialPlanV2,
   mergeFinancialPlanV2,
@@ -20,19 +21,6 @@ interface FinancialPlanRow {
   id: string;
   user_id: string;
   content: unknown;
-}
-
-interface AccountBalance {
-  account_type: string;
-  balance: number;
-  savings_amount: number | null;
-}
-
-interface CashFlowItem {
-  amount: number;
-  flow_type: "inflow" | "outflow";
-  frequency: string;
-  outflow_category: string | null;
 }
 
 interface PlanDerivedMetrics {
@@ -49,23 +37,6 @@ interface PlanDerivedMetrics {
   savingsRatio: number;
   allocationChart: Array<{ label: string; amount: number; chartColor: string }>;
 }
-
-const toAnnual = (amount: number, frequency?: string | null): number => {
-  switch (frequency) {
-    case "weekly":
-      return amount * 52;
-    case "bi-weekly":
-      return amount * 26;
-    case "monthly":
-      return amount * 12;
-    case "quarterly":
-      return amount * 4;
-    case "annual":
-      return amount;
-    default:
-      return amount * 12;
-  }
-};
 
 const currency = (value: number) =>
   value.toLocaleString("en-US", {
@@ -161,84 +132,26 @@ const PlanV2 = () => {
 
   const loadDerivedMetrics = async (userId: string) => {
     try {
-      const { data: accounts, error: accountsError } = await supabase
-        .from("accounts")
-        .select("account_type, balance, savings_amount")
-        .eq("user_id", userId);
-
-      if (accountsError) throw accountsError;
-
-      const { data: cashFlowItems, error: cashError } = await supabase
-        .from("cash_flow_items")
-        .select("amount, flow_type, frequency, outflow_category")
-        .eq("user_id", userId);
-
-      if (cashError) throw cashError;
-
-      const assetTypes = new Set([
-        "checking_account",
-        "savings_account",
-        "brokerage_account",
-        "ira",
-        "roth_ira",
-        "traditional_401k",
-        "roth_401k",
-        "primary_residence",
-        "rental_property",
-        "business",
-        "other_asset",
-      ]);
-
-      const liabilityTypes = new Set(["credit_card", "student_loan", "mortgage", "auto_loan", "other_loan"]);
-
-      const accountData = (accounts || []) as AccountBalance[];
-      const cashData = (cashFlowItems || []) as CashFlowItem[];
-
-      const totalAssets = accountData
-        .filter((account) => assetTypes.has(account.account_type))
-        .reduce((sum, account) => sum + Number(account.balance || 0), 0);
-      const totalLiabilities = accountData
-        .filter((account) => liabilityTypes.has(account.account_type))
-        .reduce((sum, account) => sum + Number(account.balance || 0), 0);
-
-      const liquidSavings = accountData
-        .filter((account) => account.account_type === "checking_account" || account.account_type === "savings_account")
-        .reduce((sum, account) => sum + Number(account.balance || 0), 0);
-
-      const annualIncome = cashData
-        .filter((item) => item.flow_type === "inflow")
-        .reduce((sum, item) => sum + toAnnual(Number(item.amount || 0), item.frequency), 0);
-      const annualOutflow = cashData
-        .filter((item) => item.flow_type === "outflow")
-        .reduce((sum, item) => sum + toAnnual(Number(item.amount || 0), item.frequency), 0);
-      const annualSavings = cashData
-        .filter((item) => item.flow_type === "outflow" && item.outflow_category === "savings")
-        .reduce((sum, item) => sum + toAnnual(Number(item.amount || 0), item.frequency), 0);
-      const annualExpenses = annualOutflow - annualSavings;
-
-      const monthlyIncome = annualIncome / 12;
-      const monthlyExpenses = annualExpenses / 12;
-      const monthlyNet = monthlyIncome - annualOutflow / 12;
-      const savingsRatio = annualIncome > 0 ? (annualSavings / annualIncome) * 100 : 0;
+      const resolved = await resolveDerivedPlanData(userId);
 
       const allocationChart = [
-        { label: "Savings", amount: annualSavings, chartColor: "#34D399" },
-        { label: "Expenses", amount: Math.max(0, annualExpenses), chartColor: "#F87171" },
-        { label: "Available", amount: Math.max(0, annualIncome - annualOutflow), chartColor: "#38BDF8" },
+        { label: "Savings", amount: resolved.annualSavings, chartColor: "#34D399" },
+        { label: "Expenses", amount: Math.max(0, resolved.annualOutflow - resolved.annualSavings), chartColor: "#F87171" },
+        { label: "Available", amount: Math.max(0, resolved.annualIncome - resolved.annualOutflow), chartColor: "#38BDF8" },
       ].filter((item) => item.amount > 0);
 
       setMetrics({
-        totalAssets,
-        totalLiabilities,
-        netWorth: totalAssets - totalLiabilities,
-        liquidSavings,
-        annualIncome,
-        annualOutflow,
-        annualSavings,
-        monthlyIncome,
-        monthlyExpenses,
-        monthlyNet,
-        savingsRatio,
+        totalAssets: resolved.totalAssets,
+        totalLiabilities: resolved.totalLiabilities,
+        netWorth: resolved.netWorth,
+        liquidSavings: resolved.liquidSavings,
+        annualIncome: resolved.annualIncome,
+        annualOutflow: resolved.annualOutflow,
+        annualSavings: resolved.annualSavings,
+        monthlyIncome: resolved.monthlyIncome,
+        monthlyExpenses: resolved.monthlyExpenses,
+        monthlyNet: resolved.monthlyNet,
+        savingsRatio: resolved.savingsRatio,
         allocationChart,
       });
     } catch (error) {

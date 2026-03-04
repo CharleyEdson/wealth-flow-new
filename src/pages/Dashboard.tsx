@@ -117,6 +117,13 @@ const Dashboard = () => {
             {isSuperAdmin && (
               <>
                 <Button
+                  onClick={() => navigate("/plan-templates")}
+                  variant="outline"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Template System
+                </Button>
+                <Button
                   onClick={() => navigate("/admin")}
                   variant="outline"
                   className="border-white/20 text-white hover:bg-white/10"

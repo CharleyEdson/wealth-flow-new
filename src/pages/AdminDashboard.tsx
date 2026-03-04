@@ -199,6 +199,13 @@ const AdminDashboard = () => {
               My Dashboard
             </Button>
             <Button
+              onClick={() => navigate("/plan-templates")}
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Templates
+            </Button>
+            <Button
               onClick={handleLogout}
               className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-20px_rgba(99,102,241,0.8)] transition-transform hover:scale-[1.03]"
             >
