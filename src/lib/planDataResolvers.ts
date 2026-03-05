@@ -4,6 +4,7 @@ import type { PlanComponentKey, PlanComponentResolvedData } from "@/types/templa
 interface AccountBalance {
   account_type: string;
   balance: number;
+  financial_bucket?: "cash" | "after_tax" | "pre_tax" | "real_estate" | "business" | "debt" | null;
 }
 
 interface CashFlowItem {
@@ -48,7 +49,7 @@ const toAnnual = (amount: number, frequency?: string | null): number => {
 export const resolveDerivedPlanData = async (userId: string): Promise<DerivedPlanData> => {
   const { data: accounts } = await supabase
     .from("accounts")
-    .select("account_type, balance")
+    .select("account_type, balance, financial_bucket")
     .eq("user_id", userId);
 
   const { data: cashFlowItems } = await supabase
@@ -82,15 +83,17 @@ export const resolveDerivedPlanData = async (userId: string): Promise<DerivedPla
   }));
 
   const totalAssets = accountData
-    .filter((account) => assetTypes.has(account.account_type))
+    .filter((account) => (account.financial_bucket ? account.financial_bucket !== "debt" : assetTypes.has(account.account_type)))
     .reduce((sum, account) => sum + account.balance, 0);
 
   const totalLiabilities = accountData
-    .filter((account) => liabilityTypes.has(account.account_type))
+    .filter((account) => (account.financial_bucket ? account.financial_bucket === "debt" : liabilityTypes.has(account.account_type)))
     .reduce((sum, account) => sum + account.balance, 0);
 
   const liquidSavings = accountData
-    .filter((account) => account.account_type === "checking_account" || account.account_type === "savings_account")
+    .filter((account) =>
+      account.financial_bucket ? account.financial_bucket === "cash" : account.account_type === "checking_account" || account.account_type === "savings_account",
+    )
     .reduce((sum, account) => sum + account.balance, 0);
 
   const annualIncome = cashData

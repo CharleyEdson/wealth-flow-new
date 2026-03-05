@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { secureLogger } from "@/lib/secureLogger";
 import { Trash2, Eye, UserPlus, FileText } from "lucide-react";
+import { TEMPLATE_SYSTEM_ENABLED } from "@/lib/features";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -198,13 +199,15 @@ const AdminDashboard = () => {
             >
               My Dashboard
             </Button>
-            <Button
-              onClick={() => navigate("/plan-templates")}
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              Templates
-            </Button>
+            {TEMPLATE_SYSTEM_ENABLED && (
+              <Button
+                onClick={() => navigate("/plan-templates")}
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Templates
+              </Button>
+            )}
             <Button
               onClick={handleLogout}
               className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-20px_rgba(99,102,241,0.8)] transition-transform hover:scale-[1.03]"

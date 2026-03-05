@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp } from "lucide-react";
 import { secureLogger } from "@/lib/secureLogger";
 import {
   Dialog,
@@ -10,30 +9,44 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { defaultBucketByAccountType, financialBucketLabel, type FinancialBucket } from "@/lib/accountBuckets";
+import { calculateFinancialRatios, type RatioAccountInput, type RatioCashFlowInput, type RatioTile } from "@/lib/ratioCalculations";
+import type { AccountType } from "@/lib/accountTypes";
 
-interface CashFlowItem {
-  id: string;
-  name: string;
-  amount: number;
-  flow_type: string;
-  inflow_category?: string;
-  outflow_category?: string;
-  frequency: string;
+interface RatiosCardProps {
+  userId: string;
+  title?: string;
+  description?: string;
+  compact?: boolean;
 }
 
-export function RatiosCard({ userId }: { userId: string }) {
-  const [savingsRatio, setSavingsRatio] = useState<number>(0);
-  const [savingsItems, setSavingsItems] = useState<CashFlowItem[]>([]);
-  const [inflowItems, setInflowItems] = useState<CashFlowItem[]>([]);
-  const [totalInflow, setTotalInflow] = useState<number>(0);
-  const [totalSavings, setTotalSavings] = useState<number>(0);
-  const [burnRate, setBurnRate] = useState<number>(0);
-  const [expenseItems, setExpenseItems] = useState<CashFlowItem[]>([]);
-  const [debtPaymentItems, setDebtPaymentItems] = useState<CashFlowItem[]>([]);
-  const [totalExpenses, setTotalExpenses] = useState<number>(0);
-  const [totalDebtPayments, setTotalDebtPayments] = useState<number>(0);
+const currency = (value: number) =>
+  value.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+
+const tileStatusEmoji = (tile: RatioTile) => {
+  if (tile.status === "bad") return "🙁";
+  if (tile.status === "warn") return "😐";
+  return "🙂";
+};
+
+const prettyFlowType = (item: RatioCashFlowInput) => {
+  if (item.flow_type === "inflow") return "Income";
+  return item.outflow_category ? item.outflow_category.split("_").join(" ") : "Outflow";
+};
+
+export function RatiosCard({
+  userId,
+  title = "Financial Ratios",
+  description = "Click a tile to see exactly what is included in the calculation.",
+  compact = false,
+}: RatiosCardProps) {
   const [loading, setLoading] = useState(true);
-  const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
+  const [ratioTiles, setRatioTiles] = useState<RatioTile[]>([]);
+  const [selectedRatio, setSelectedRatio] = useState<RatioTile | null>(null);
 
   useEffect(() => {
     fetchDataAndCalculate();
@@ -43,124 +56,56 @@ export function RatiosCard({ userId }: { userId: string }) {
     try {
       setLoading(true);
 
-      const { data: cashFlowItems, error } = await supabase
-        .from("cash_flow_items")
-        .select("*")
-        .eq("user_id", userId);
+      const [{ data: cashFlowItems, error: cashFlowError }, { data: accounts, error: accountsError }] = await Promise.all([
+        supabase
+          .from("cash_flow_items")
+          .select("id, name, amount, flow_type, outflow_category, frequency")
+          .eq("user_id", userId),
+        supabase
+          .from("accounts")
+          .select("id, name, balance, account_type, financial_bucket")
+          .eq("user_id", userId),
+      ]);
 
-      if (error) throw error;
+      if (cashFlowError) throw cashFlowError;
+      if (accountsError) throw accountsError;
 
-      // Get inflow items
-      const inflows = (cashFlowItems || []).filter(
-        (item: CashFlowItem) => item.flow_type === "inflow"
-      );
-      setInflowItems(inflows);
+      const accountInputs: RatioAccountInput[] = (accounts || []).map((account: any) => ({
+        id: account.id,
+        name: account.name,
+        balance: Number(account.balance || 0),
+        financial_bucket: (account.financial_bucket || defaultBucketByAccountType[account.account_type as AccountType]) as FinancialBucket,
+      }));
 
-      // Calculate total inflow (annualized)
-      const inflowTotal = inflows.reduce((sum, item) => {
-        const amount = Number(item.amount);
-        // Convert to annual based on frequency
-        switch (item.frequency) {
-          case "monthly": return sum + (amount * 12);
-          case "bi-weekly": return sum + (amount * 26);
-          case "weekly": return sum + (amount * 52);
-          case "quarterly": return sum + (amount * 4);
-          case "annual": return sum + amount;
-          default: return sum + (amount * 12); // default to monthly
-        }
-      }, 0);
-      setTotalInflow(inflowTotal);
+      const cashFlowInputs: RatioCashFlowInput[] = (cashFlowItems || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        amount: Number(item.amount || 0),
+        flow_type: item.flow_type,
+        outflow_category: item.outflow_category,
+        frequency: item.frequency,
+      }));
 
-      // Get savings items (outflows with savings category)
-      const savings = (cashFlowItems || []).filter(
-        (item: CashFlowItem) =>
-          item.flow_type === "outflow" && item.outflow_category === "savings"
-      );
-      setSavingsItems(savings);
-
-      // Calculate total savings (annualized)
-      const savingsTotal = savings.reduce((sum, item) => {
-        const amount = Number(item.amount);
-        switch (item.frequency) {
-          case "monthly": return sum + (amount * 12);
-          case "bi-weekly": return sum + (amount * 26);
-          case "weekly": return sum + (amount * 52);
-          case "quarterly": return sum + (amount * 4);
-          case "annual": return sum + amount;
-          default: return sum + (amount * 12);
-        }
-      }, 0);
-      setTotalSavings(savingsTotal);
-
-      // Calculate savings ratio
-      const ratio = inflowTotal > 0 ? (savingsTotal / inflowTotal) * 100 : 0;
-      setSavingsRatio(ratio);
-
-      // Get expense items
-      const expenses = (cashFlowItems || []).filter(
-        (item: CashFlowItem) =>
-          item.flow_type === "outflow" && item.outflow_category === "expenses"
-      );
-      setExpenseItems(expenses);
-
-      // Calculate total expenses (annualized)
-      const expensesTotal = expenses.reduce((sum, item) => {
-        const amount = Number(item.amount);
-        switch (item.frequency) {
-          case "monthly": return sum + (amount * 12);
-          case "bi-weekly": return sum + (amount * 26);
-          case "weekly": return sum + (amount * 52);
-          case "quarterly": return sum + (amount * 4);
-          case "annual": return sum + amount;
-          default: return sum + (amount * 12);
-        }
-      }, 0);
-      setTotalExpenses(expensesTotal);
-
-      // Get debt payment items
-      const debtPayments = (cashFlowItems || []).filter(
-        (item: CashFlowItem) =>
-          item.flow_type === "outflow" && item.outflow_category === "debt_payments"
-      );
-      setDebtPaymentItems(debtPayments);
-
-      // Calculate total debt payments (annualized)
-      const debtPaymentsTotal = debtPayments.reduce((sum, item) => {
-        const amount = Number(item.amount);
-        switch (item.frequency) {
-          case "monthly": return sum + (amount * 12);
-          case "bi-weekly": return sum + (amount * 26);
-          case "weekly": return sum + (amount * 52);
-          case "quarterly": return sum + (amount * 4);
-          case "annual": return sum + amount;
-          default: return sum + (amount * 12);
-        }
-      }, 0);
-      setTotalDebtPayments(debtPaymentsTotal);
-
-      // Calculate burn rate: (Annual Expenses - Debt Payments) / Annual Income
-      const burnRateCalc = inflowTotal > 0 ? ((expensesTotal - debtPaymentsTotal) / inflowTotal) * 100 : 0;
-      setBurnRate(burnRateCalc);
+      const result = calculateFinancialRatios(accountInputs, cashFlowInputs);
+      setRatioTiles(result.tiles);
     } catch (error) {
-      secureLogger.error(error, 'Calculate ratios', 'Failed to calculate financial ratios');
+      secureLogger.error(error, "Calculate ratios", "Failed to calculate financial ratios");
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCategory = (category: string) => {
-    return category
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+  const rowClass = useMemo(
+    () => (compact ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"),
+    [compact],
+  );
 
   if (loading) {
     return (
       <Card className="border-white/10 bg-white/5">
         <CardHeader>
-          <CardTitle className="text-white">Financial Ratios</CardTitle>
-          <CardDescription className="text-white/60">Key financial health indicators</CardDescription>
+          <CardTitle className="text-white">{title}</CardTitle>
+          <CardDescription className="text-white/60">{description}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center text-white/60">Loading ratios...</div>
@@ -173,265 +118,120 @@ export function RatiosCard({ userId }: { userId: string }) {
     <>
       <Card className="border-white/10 bg-white/5">
         <CardHeader>
-          <CardTitle className="text-white">Financial Ratios</CardTitle>
-          <CardDescription className="text-white/60">
-            Click on any ratio to see calculation details
-          </CardDescription>
+          <CardTitle className="text-white">{title}</CardTitle>
+          <CardDescription className="text-white/60">{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {/* Savings Ratio Square */}
-            <button
-              onClick={() => setSelectedRatio("savings")}
-              className="group aspect-square rounded-2xl border border-white/10 bg-white/5 p-6 transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/15"
-            >
-              <TrendingUp className="h-8 w-8 text-primary transition-transform duration-200 group-hover:scale-110" />
-              <div className="text-center">
-                <div className="text-3xl font-heading font-semibold text-white">{savingsRatio.toFixed(1)}%</div>
-                <div className="mt-1 text-sm text-white/60">Savings Ratio</div>
-              </div>
-            </button>
-
-            {/* Burn Rate Square */}
-            <button
-              onClick={() => setSelectedRatio("burnRate")}
-              className="group aspect-square rounded-2xl border border-white/10 bg-white/5 p-6 transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/15"
-            >
-              <TrendingUp className="h-8 w-8 text-primary transition-transform duration-200 group-hover:scale-110" />
-              <div className="text-center">
-                <div className="text-3xl font-heading font-semibold text-white">{burnRate.toFixed(1)}%</div>
-                <div className="mt-1 text-sm text-white/60">Burn Rate</div>
-              </div>
-            </button>
+          <div className={`grid gap-3 ${rowClass}`}>
+            {ratioTiles.map((tile) => (
+              <button
+                key={tile.key}
+                onClick={() => setSelectedRatio(tile)}
+                className={`relative min-h-[140px] rounded-2xl bg-gradient-to-br ${tile.themeClass} p-4 text-left text-white shadow-lg transition hover:-translate-y-0.5`}
+              >
+                <div className="flex items-center justify-end">
+                  <span className="rounded-full bg-black/30 px-2 py-1 text-xs font-semibold">
+                    {tileStatusEmoji(tile)} {tile.targetLabel}
+                  </span>
+                </div>
+                <p className="mt-2 text-2xl leading-none font-semibold text-white">{tile.title}</p>
+                <p className="mt-4 text-5xl font-black tracking-tight text-white">{tile.valueLabel}</p>
+              </button>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Savings Ratio Details Dialog */}
-      <Dialog open={selectedRatio === "savings"} onOpenChange={() => setSelectedRatio(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-white/10 bg-white/10 text-white backdrop-blur-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Savings Ratio Calculation
-            </DialogTitle>
-            <DialogDescription className="text-white/60">
-              Shows how much of your income you're saving
-            </DialogDescription>
-          </DialogHeader>
+      <Dialog open={!!selectedRatio} onOpenChange={() => setSelectedRatio(null)}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto border-white/10 bg-slate-950/95 text-white">
+          {selectedRatio && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white">{selectedRatio.title} Details</DialogTitle>
+                <DialogDescription className="text-white/60">
+                  {selectedRatio.details.formula} · Target {selectedRatio.targetLabel}
+                </DialogDescription>
+              </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Formula */}
-            <div className="p-4 rounded-lg bg-muted">
-              <div className="text-sm font-medium mb-2">Calculation Formula:</div>
-              <div className="font-mono text-sm">
-                Savings Ratio = (Total Savings / Total Inflow) × 100
-              </div>
-              <div className="font-mono text-sm mt-2">
-                = (${totalSavings.toLocaleString()} / ${totalInflow.toLocaleString()}) × 100
-              </div>
-              <div className="font-mono text-sm font-bold mt-2 text-primary">
-                = {savingsRatio.toFixed(1)}%
-              </div>
-            </div>
-
-            {/* Interpretation */}
-            <div className="p-4 rounded-lg bg-muted/50">
-              <div className="text-sm font-medium mb-2">What this means:</div>
-              <p className="text-sm text-muted-foreground">
-                {savingsRatio >= 20
-                  ? "Excellent! You're saving a healthy portion of your income. This puts you in a strong position for financial goals."
-                  : savingsRatio >= 10
-                  ? "Good start! You're saving a reasonable amount. Consider gradually increasing to 20% or more for stronger financial health."
-                  : savingsRatio > 0
-                  ? "You're saving something, which is great! Try to gradually increase to at least 10-20% of your income for better financial security."
-                  : "No savings detected yet. Consider allocating at least 10-20% of your income to savings for financial stability."}
-              </p>
-            </div>
-
-            {/* Savings Items */}
-            <div className="space-y-3">
-              <div className="font-medium">Savings Items (${totalSavings.toLocaleString()}):</div>
-              {savingsItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No savings items found. Add cash flow items with "Savings" category.</p>
-              ) : (
-                <div className="space-y-2">
-                  {savingsItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                    >
-                      <div>
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatCategory(item.frequency)}
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold">
-                        ${Number(item.amount).toLocaleString()}
-                      </div>
+              <div className="space-y-5">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-white/60">Numerator</p>
+                      <p className="text-sm text-white/70">{selectedRatio.details.numeratorLabel}</p>
+                      <p className="text-2xl font-semibold text-white">{currency(selectedRatio.details.numeratorValue)}</p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Inflow Items */}
-            <div className="space-y-3">
-              <div className="font-medium">Total Inflow (${totalInflow.toLocaleString()}):</div>
-              {inflowItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No inflow items found. Add income sources to calculate ratios.</p>
-              ) : (
-                <div className="space-y-2">
-                  {inflowItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                    >
-                      <div>
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.inflow_category && formatCategory(item.inflow_category)} • {formatCategory(item.frequency)}
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold">
-                        ${Number(item.amount).toLocaleString()}
-                      </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-white/60">Denominator</p>
+                      <p className="text-sm text-white/70">{selectedRatio.details.denominatorLabel}</p>
+                      <p className="text-2xl font-semibold text-white">{currency(selectedRatio.details.denominatorValue)}</p>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Burn Rate Details Dialog */}
-      <Dialog open={selectedRatio === "burnRate"} onOpenChange={() => setSelectedRatio(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-white/10 bg-white/10 text-white backdrop-blur-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Burn Rate Calculation
-            </DialogTitle>
-            <DialogDescription className="text-white/60">
-              Shows what percentage of income is spent on expenses (excluding debt payments)
-            </DialogDescription>
-          </DialogHeader>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="mb-2 text-sm font-semibold text-white">Included Accounts</p>
+                    {selectedRatio.details.includedAccounts.length === 0 ? (
+                      <p className="text-sm text-white/60">No account rows used directly for this ratio.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectedRatio.details.includedAccounts.map((account) => (
+                          <div key={account.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-white">{account.name}</span>
+                              <span className="text-sm font-semibold text-white">{currency(account.balance)}</span>
+                            </div>
+                            <p className="text-xs text-white/60">{financialBucketLabel[account.financial_bucket]}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-          <div className="space-y-6">
-            {/* Formula */}
-            <div className="p-4 rounded-lg bg-muted">
-              <div className="text-sm font-medium mb-2">Calculation Formula:</div>
-              <div className="font-mono text-sm">
-                Burn Rate = ((Annual Expenses - Debt Payments) / Annual Income) × 100
-              </div>
-              <div className="font-mono text-sm mt-2">
-                = ((${totalExpenses.toLocaleString()} - ${totalDebtPayments.toLocaleString()}) / ${totalInflow.toLocaleString()}) × 100
-              </div>
-              <div className="font-mono text-sm mt-2">
-                = (${(totalExpenses - totalDebtPayments).toLocaleString()} / ${totalInflow.toLocaleString()}) × 100
-              </div>
-              <div className="font-mono text-sm font-bold mt-2 text-primary">
-                = {burnRate.toFixed(1)}%
-              </div>
-            </div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="mb-2 text-sm font-semibold text-white">Excluded Accounts</p>
+                    {selectedRatio.details.excludedAccounts.length === 0 ? (
+                      <p className="text-sm text-white/60">No excluded account rows for this ratio.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectedRatio.details.excludedAccounts.map((account) => (
+                          <div key={account.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-white">{account.name}</span>
+                              <span className="text-sm font-semibold text-white">{currency(account.balance)}</span>
+                            </div>
+                            <p className="text-xs text-white/60">{financialBucketLabel[account.financial_bucket]}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-            {/* Interpretation */}
-            <div className="p-4 rounded-lg bg-muted/50">
-              <div className="text-sm font-medium mb-2">What this means:</div>
-              <p className="text-sm text-muted-foreground">
-                {burnRate <= 50
-                  ? "Excellent! You're living well below your means with strong financial flexibility."
-                  : burnRate <= 70
-                  ? "Good! You have a healthy balance between spending and saving."
-                  : burnRate <= 85
-                  ? "Your expenses are taking up most of your income. Consider ways to reduce spending or increase income."
-                  : "High burn rate - most of your income goes to expenses. Focus on reducing costs or increasing income to improve financial health."}
-              </p>
-            </div>
-
-            {/* Expense Items */}
-            <div className="space-y-3">
-              <div className="font-medium">Annual Expenses (${totalExpenses.toLocaleString()}):</div>
-              {expenseItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No expense items found.</p>
-              ) : (
-                <div className="space-y-2">
-                  {expenseItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                    >
-                      <div>
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatCategory(item.frequency)}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="mb-2 text-sm font-semibold text-white">Cash Flow Rows Used</p>
+                  {selectedRatio.details.includedCashFlowItems.length === 0 ? (
+                    <p className="text-sm text-white/60">No cash flow rows used directly for this ratio.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedRatio.details.includedCashFlowItems.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                          <div>
+                            <p className="text-sm text-white">{item.name}</p>
+                            <p className="text-xs text-white/60">
+                              {prettyFlowType(item)} · {item.frequency}
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold text-white">{currency(item.amount)}</p>
                         </div>
-                      </div>
-                      <div className="text-sm font-semibold">
-                        ${Number(item.amount).toLocaleString()}
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Debt Payment Items */}
-            <div className="space-y-3">
-              <div className="font-medium">Annual Debt Payments (${totalDebtPayments.toLocaleString()}):</div>
-              {debtPaymentItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No debt payment items found.</p>
-              ) : (
-                <div className="space-y-2">
-                  {debtPaymentItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                    >
-                      <div>
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatCategory(item.frequency)}
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold">
-                        ${Number(item.amount).toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Inflow Items */}
-            <div className="space-y-3">
-              <div className="font-medium">Annual Income (${totalInflow.toLocaleString()}):</div>
-              {inflowItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No income items found.</p>
-              ) : (
-                <div className="space-y-2">
-                  {inflowItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                    >
-                      <div>
-                        <div className="font-medium text-sm">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.inflow_category && formatCategory(item.inflow_category)} • {formatCategory(item.frequency)}
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold">
-                        ${Number(item.amount).toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>

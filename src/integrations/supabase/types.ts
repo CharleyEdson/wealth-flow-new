@@ -20,6 +20,7 @@ export type Database = {
           balance: number
           category: string
           created_at: string
+          financial_bucket: Database["public"]["Enums"]["financial_bucket"]
           id: string
           name: string
           savings_amount: number | null
@@ -31,6 +32,7 @@ export type Database = {
           balance?: number
           category: string
           created_at?: string
+          financial_bucket?: Database["public"]["Enums"]["financial_bucket"]
           id?: string
           name: string
           savings_amount?: number | null
@@ -42,6 +44,7 @@ export type Database = {
           balance?: number
           category?: string
           created_at?: string
+          financial_bucket?: Database["public"]["Enums"]["financial_bucket"]
           id?: string
           name?: string
           savings_amount?: number | null
@@ -346,6 +349,13 @@ export type Database = {
     }
     Enums: {
       app_role: "super_admin" | "client"
+      financial_bucket:
+        | "cash"
+        | "after_tax"
+        | "pre_tax"
+        | "real_estate"
+        | "business"
+        | "debt"
       flow_type: "inflow" | "outflow"
       inflow_category:
         | "salary"
@@ -353,7 +363,7 @@ export type Database = {
         | "interest_income"
         | "business_income"
         | "other_income"
-      outflow_category: "savings" | "transfers" | "expenses" | "debt_payments"
+      outflow_category: "savings" | "transfers" | "expenses" | "debt_payments" | "taxes"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -482,6 +492,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["super_admin", "client"],
+      financial_bucket: ["cash", "after_tax", "pre_tax", "real_estate", "business", "debt"],
       flow_type: ["inflow", "outflow"],
       inflow_category: [
         "salary",
@@ -490,7 +501,7 @@ export const Constants = {
         "business_income",
         "other_income",
       ],
-      outflow_category: ["savings", "transfers", "expenses", "debt_payments"],
+      outflow_category: ["savings", "transfers", "expenses", "debt_payments", "taxes"],
     },
   },
 } as const

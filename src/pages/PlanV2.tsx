@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { secureLogger } from "@/lib/secureLogger";
 import { CashFlowPieChart } from "@/components/plan/CashFlowPieChart";
+import { RatiosCard } from "@/components/dashboard/RatiosCard";
 import { PlanV2Header } from "@/components/plan-v2/PlanV2Header";
 import { SectionEditor } from "@/components/plan-v2/SectionEditor";
 import { SectionRenderer } from "@/components/plan-v2/SectionRenderer";
@@ -289,6 +290,14 @@ const PlanV2 = () => {
             netWorth={metrics.netWorth}
             liquidSavings={metrics.liquidSavings}
             monthlyExpenses={metrics.monthlyExpenses}
+          />
+        </section>
+
+        <section className="mb-8 plan-v2-print-section">
+          <RatiosCard
+            userId={displayUserId}
+            title="Financial Ratios"
+            description="Core planning ratios with account-level and cash-flow-level transparency."
           />
         </section>
 

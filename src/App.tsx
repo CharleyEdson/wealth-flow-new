@@ -17,6 +17,7 @@ import Old2 from "./pages/Old2";
 import Old3 from "./pages/Old3";
 import Old4 from "./pages/Old4";
 import NotFound from "./pages/NotFound";
+import { TEMPLATE_SYSTEM_ENABLED } from "./lib/features";
 
 const queryClient = new QueryClient();
 
@@ -32,10 +33,12 @@ const App = () => (
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/plan" element={<Plan />} />
           <Route path="/plan-v2" element={<PlanV2 />} />
-          <Route path="/plan-templates" element={<PlanTemplates />} />
-          <Route path="/plan-templates/:templateId" element={<PlanTemplateBuilder />} />
-          <Route path="/plan-components" element={<PlanComponents />} />
-          <Route path="/client-plans/:clientPlanId" element={<ClientPlan />} />
+          {TEMPLATE_SYSTEM_ENABLED && <Route path="/plan-templates" element={<PlanTemplates />} />}
+          {TEMPLATE_SYSTEM_ENABLED && (
+            <Route path="/plan-templates/:templateId" element={<PlanTemplateBuilder />} />
+          )}
+          {TEMPLATE_SYSTEM_ENABLED && <Route path="/plan-components" element={<PlanComponents />} />}
+          {TEMPLATE_SYSTEM_ENABLED && <Route path="/client-plans/:clientPlanId" element={<ClientPlan />} />}
           <Route path="/old1" element={<Old1 />} />
           <Route path="/old2" element={<Old2 />} />
           <Route path="/old3" element={<Old3 />} />

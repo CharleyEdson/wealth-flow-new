@@ -12,6 +12,7 @@ import { NetWorthChart } from "@/components/dashboard/NetWorthChart";
 import { CashFlowCard } from "@/components/dashboard/CashFlowCard";
 import { CashFlowAllocationCard } from "@/components/dashboard/CashFlowAllocationCard";
 import { RatiosCard } from "@/components/dashboard/RatiosCard";
+import { TEMPLATE_SYSTEM_ENABLED } from "@/lib/features";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -116,13 +117,15 @@ const Dashboard = () => {
             </Button>
             {isSuperAdmin && (
               <>
-                <Button
-                  onClick={() => navigate("/plan-templates")}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10"
-                >
-                  Template System
-                </Button>
+                {TEMPLATE_SYSTEM_ENABLED && (
+                  <Button
+                    onClick={() => navigate("/plan-templates")}
+                    variant="outline"
+                    className="border-white/20 text-white hover:bg-white/10"
+                  >
+                    Template System
+                  </Button>
+                )}
                 <Button
                   onClick={() => navigate("/admin")}
                   variant="outline"

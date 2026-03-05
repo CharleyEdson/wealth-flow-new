@@ -1,20 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { AddAccountModal, Account, AccountType } from "./AddAccountModal";
+import { AddAccountModal, type Account } from "./AddAccountModal";
 import { Trash2, Pencil } from "lucide-react";
 import { secureLogger } from "@/lib/secureLogger";
+import { accountTypeLabels, type AccountType } from "@/lib/accountTypes";
+import {
+  defaultBucketByAccountType,
+  financialBucketLabel,
+  type FinancialBucket,
+} from "@/lib/accountBuckets";
 
 interface BalanceSheetCardProps {
   userId: string;
   isSuperAdmin: boolean;
 }
 
+const ASSET_BUCKET_ORDER: FinancialBucket[] = ["cash", "after_tax", "pre_tax", "real_estate", "business"];
+const DEBT_TYPE_ORDER: AccountType[] = ["mortgage", "student_loan", "auto_loan", "credit_card", "other_loan"];
+
+const currency = (value: number) =>
+  value.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+
 export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps) => {
-  const [assets, setAssets] = useState<Account[]>([]);
-  const [liabilities, setLiabilities] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined);
@@ -27,31 +42,24 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
     try {
       const { data, error } = await supabase
         .from("accounts")
-        .select("*")
+        .select("id, account_type, name, balance, savings_amount, financial_bucket")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      if (data) {
-        const accountsData = data.map(account => ({
+      setAccounts(
+        (data || []).map((account: any) => ({
           id: account.id,
           type: account.account_type as AccountType,
           name: account.name,
-          balance: Number(account.balance),
-        }));
-
-        setAssets(accountsData.filter(a => a.type in {
-          checking_account: 1, savings_account: 1, brokerage_account: 1, ira: 1, roth_ira: 1,
-          traditional_401k: 1, roth_401k: 1, primary_residence: 1, rental_property: 1, business: 1, other_asset: 1
-        }));
-        
-        setLiabilities(accountsData.filter(a => a.type in {
-          credit_card: 1, student_loan: 1, mortgage: 1, auto_loan: 1, other_loan: 1
-        }));
-      }
+          balance: Number(account.balance || 0),
+          savingsAmount: Number(account.savings_amount || 0),
+          financialBucket: (account.financial_bucket || defaultBucketByAccountType[account.account_type as AccountType]) as FinancialBucket,
+        })),
+      );
     } catch (error) {
-      secureLogger.error(error, 'Fetch accounts', 'Failed to load accounts');
+      secureLogger.error(error, "Fetch accounts", "Failed to load accounts");
     } finally {
       setLoading(false);
     }
@@ -59,25 +67,18 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
   const handleAddAccount = async (account: Omit<Account, "id">) => {
     try {
-      const isAsset = [
-        "checking_account", "savings_account", "brokerage_account", "ira", "roth_ira",
-        "traditional_401k", "roth_401k", "primary_residence", "rental_property", 
-        "business", "other_asset"
-      ].includes(account.type);
-
-      const { error } = await supabase
-        .from("accounts")
-        .insert({
-          user_id: userId,
-          account_type: account.type,
-          name: account.name,
-          balance: account.balance,
-          category: isAsset ? "asset" : "liability",
-          savings_amount: account.savingsAmount || 0,
-        });
+      const isAsset = account.financialBucket !== "debt";
+      const { error } = await supabase.from("accounts").insert({
+        user_id: userId,
+        account_type: account.type,
+        name: account.name,
+        balance: account.balance,
+        category: isAsset ? "asset" : "liability",
+        savings_amount: account.savingsAmount || 0,
+        financial_bucket: account.financialBucket,
+      });
 
       if (error) throw error;
-
       toast.success("Account added");
       fetchAccounts();
     } catch (error: any) {
@@ -87,12 +88,7 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
   const handleEditAccount = async (account: Account) => {
     try {
-      const isAsset = [
-        "checking_account", "savings_account", "brokerage_account", "ira", "roth_ira",
-        "traditional_401k", "roth_401k", "primary_residence", "rental_property", 
-        "business", "other_asset"
-      ].includes(account.type);
-
+      const isAsset = account.financialBucket !== "debt";
       const { error } = await supabase
         .from("accounts")
         .update({
@@ -101,6 +97,7 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
           balance: account.balance,
           category: isAsset ? "asset" : "liability",
           savings_amount: account.savingsAmount || 0,
+          financial_bucket: account.financialBucket,
         })
         .eq("id", account.id);
 
@@ -116,13 +113,8 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
 
   const handleDeleteAccount = async (accountId: string) => {
     try {
-      const { error } = await supabase
-        .from("accounts")
-        .delete()
-        .eq("id", accountId);
-
+      const { error } = await supabase.from("accounts").delete().eq("id", accountId);
       if (error) throw error;
-
       toast.success("Account deleted");
       fetchAccounts();
     } catch (error: any) {
@@ -130,31 +122,38 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
     }
   };
 
-  const calculateTotal = (accounts: Account[]) => {
-    return accounts.reduce((sum, account) => sum + account.balance, 0);
-  };
-
-  const getAccountTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      checking_account: "Checking Account",
-      savings_account: "Savings Account",
-      brokerage_account: "Brokerage Account",
-      ira: "IRA",
-      roth_ira: "Roth IRA",
-      traditional_401k: "401(k)",
-      roth_401k: "Roth 401(k)",
-      primary_residence: "Primary Residence",
-      rental_property: "Rental Property",
-      business: "Business",
-      other_asset: "Other Asset",
-      credit_card: "Credit Card",
-      student_loan: "Student Loan",
-      mortgage: "Mortgage",
-      auto_loan: "Auto Loan",
-      other_loan: "Other Loan",
+  const groupedAssets = useMemo(() => {
+    const groups: Record<FinancialBucket, Account[]> = {
+      cash: [],
+      after_tax: [],
+      pre_tax: [],
+      real_estate: [],
+      business: [],
+      debt: [],
     };
-    return labels[type] || type;
-  };
+
+    for (const account of accounts) {
+      groups[account.financialBucket].push(account);
+    }
+
+    return groups;
+  }, [accounts]);
+
+  const groupedDebtsByType = useMemo(() => {
+    const debtAccounts = groupedAssets.debt;
+    return DEBT_TYPE_ORDER.map((type) => ({
+      type,
+      label: accountTypeLabels[type],
+      accounts: debtAccounts.filter((account) => account.type === type),
+    })).filter((group) => group.accounts.length > 0);
+  }, [groupedAssets.debt]);
+
+  const totalAssets = ASSET_BUCKET_ORDER.reduce(
+    (sum, bucket) => sum + groupedAssets[bucket].reduce((bucketSum, account) => bucketSum + account.balance, 0),
+    0,
+  );
+  const totalDebts = groupedAssets.debt.reduce((sum, account) => sum + account.balance, 0);
+  const netWorth = totalAssets - totalDebts;
 
   if (loading) {
     return (
@@ -170,156 +169,149 @@ export const BalanceSheetCard = ({ userId, isSuperAdmin }: BalanceSheetCardProps
     );
   }
 
-  const totalAssets = calculateTotal(assets);
-  const totalLiabilities = calculateTotal(liabilities);
-  const netWorth = totalAssets - totalLiabilities;
-
   return (
     <>
       <Card className="border-white/10 bg-white/5 text-white">
         <CardHeader>
           <CardTitle className="text-white">Balance Sheet</CardTitle>
-          <CardDescription className="text-white/60">Your assets and liabilities</CardDescription>
+          <CardDescription className="text-white/60">Grouped by planning categories</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-white">Assets</h3>
-                </div>
-                {assets.length > 0 ? (
-                  <ul className="space-y-2">
-                    {assets.map((asset) => (
-                      <li key={asset.id} className="flex items-center justify-between group">
-                        <div className="flex-1">
-                          <div className="text-sm text-white/50">
-                            {getAccountTypeLabel(asset.type)}
+        <CardContent className="space-y-8">
+          <div className="grid gap-8 xl:grid-cols-2">
+            <div className="space-y-5">
+              <h3 className="text-lg font-semibold text-white">Assets</h3>
+              {ASSET_BUCKET_ORDER.map((bucket) => {
+                const rows = groupedAssets[bucket];
+                if (rows.length === 0) return null;
+                const subtotal = rows.reduce((sum, row) => sum + row.balance, 0);
+
+                return (
+                  <div key={bucket} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h4 className="text-sm font-semibold uppercase tracking-wide text-white/70">{financialBucketLabel[bucket]}</h4>
+                      <span className="text-sm font-semibold text-white">{currency(subtotal)}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {rows.map((asset) => (
+                        <div key={asset.id} className="group flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                          <div>
+                            <div className="text-sm text-white/60">{accountTypeLabels[asset.type]}</div>
+                            <div className="font-medium text-white">{asset.name}</div>
                           </div>
-                          <div className="font-medium text-white">{asset.name}</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">${asset.balance.toLocaleString()}</span>
-                          {isSuperAdmin && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingAccount(asset);
-                                  setModalOpen(true);
-                                }}
-                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteAccount(asset.id)}
-                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-white/55">No assets recorded</p>
-                )}
-                <p className="mt-3 border-t border-white/10 pt-3 font-bold text-white">
-                  Total: ${totalAssets.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-white">Liabilities</h3>
-                </div>
-                {liabilities.length > 0 ? (
-                  <ul className="space-y-2">
-                    {liabilities.map((liability) => (
-                      <li key={liability.id} className="flex items-center justify-between group">
-                        <div className="flex-1">
-                          <div className="text-sm text-white/50">
-                            {getAccountTypeLabel(liability.type)}
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-white">{currency(asset.balance)}</span>
+                            {isSuperAdmin && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingAccount(asset);
+                                    setModalOpen(true);
+                                  }}
+                                  className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteAccount(asset.id)}
+                                  className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
-                          <div className="font-medium text-white">{liability.name}</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">${liability.balance.toLocaleString()}</span>
-                          {isSuperAdmin && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingAccount(liability);
-                                  setModalOpen(true);
-                                }}
-                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteAccount(liability.id)}
-                                className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-white/55">No liabilities recorded</p>
-                )}
-                <p className="mt-3 border-t border-white/10 pt-3 font-bold text-white">
-                  Total: ${totalLiabilities.toLocaleString()}
-                </p>
-              </div>
-            </div>
-            
-            <div className="grid gap-4 rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 sm:grid-cols-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Total Assets</p>
-                <p className="mt-2 text-2xl font-heading font-semibold text-white">
-                  ${totalAssets.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Total Liabilities</p>
-                <p className="mt-2 text-2xl font-heading font-semibold text-white">
-                  ${totalLiabilities.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Net Worth</p>
-                <p className="mt-2 text-3xl font-heading font-semibold text-white">
-                  ${netWorth.toLocaleString()}
-                </p>
-                <p className="mt-2 text-xs uppercase tracking-wide text-white/60">Assets minus liabilities</p>
-              </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {isSuperAdmin && (
-              <Button
-                onClick={() => {
-                  setEditingAccount(undefined);
-                  setModalOpen(true);
-                }}
-                className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
-              >
-                Add Account
-              </Button>
-            )}
+            <div className="space-y-5">
+              <h3 className="text-lg font-semibold text-white">Debts</h3>
+              {groupedDebtsByType.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white/60">No debts recorded</div>
+              ) : (
+                groupedDebtsByType.map((group) => {
+                  const subtotal = group.accounts.reduce((sum, row) => sum + row.balance, 0);
+                  return (
+                    <div key={group.type} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h4 className="text-sm font-semibold uppercase tracking-wide text-white/70">{group.label}</h4>
+                        <span className="text-sm font-semibold text-white">{currency(subtotal)}</span>
+                      </div>
+                      <div className="space-y-2">
+                        {group.accounts.map((debt) => (
+                          <div key={debt.id} className="group flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                            <div className="font-medium text-white">{debt.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-white">{currency(debt.balance)}</span>
+                              {isSuperAdmin && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingAccount(debt);
+                                      setModalOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteAccount(debt.id)}
+                                    className="h-8 w-8 p-0 opacity-0 text-white/60 hover:text-white group-hover:opacity-100"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
+
+          <div className="grid gap-4 rounded-2xl border border-white/10 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Total Assets</p>
+              <p className="mt-2 text-2xl font-heading font-semibold text-white">{currency(totalAssets)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Total Debts</p>
+              <p className="mt-2 text-2xl font-heading font-semibold text-white">{currency(totalDebts)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Net Worth</p>
+              <p className="mt-2 text-3xl font-heading font-semibold text-white">{currency(netWorth)}</p>
+              <p className="mt-2 text-xs uppercase tracking-wide text-white/60">Assets minus debts</p>
+            </div>
+          </div>
+
+          {isSuperAdmin && (
+            <Button
+              onClick={() => {
+                setEditingAccount(undefined);
+                setModalOpen(true);
+              }}
+              className="bg-gradient-to-r from-primary to-secondary text-primary-foreground shadow-[0_20px_45px_-25px_rgba(99,102,241,0.7)] hover:scale-[1.01]"
+            >
+              Add Account
+            </Button>
+          )}
         </CardContent>
       </Card>
 

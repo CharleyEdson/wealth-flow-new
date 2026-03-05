@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 export type FlowType = "inflow" | "outflow";
 export type InflowCategory = "salary" | "investment_income" | "interest_income" | "business_income" | "other_income";
-export type OutflowCategory = "savings" | "transfers" | "expenses" | "debt_payments";
+export type OutflowCategory = "savings" | "transfers" | "expenses" | "debt_payments" | "taxes";
 
 interface AddCashFlowModalProps {
   onAdd: (item: {
@@ -178,6 +178,9 @@ export function AddCashFlowModal({ onAdd, accounts }: AddCashFlowModalProps) {
                   </SelectItem>
                   <SelectItem value="debt_payments" className="focus:bg-primary/20 focus:text-white">
                     Debt Payments
+                  </SelectItem>
+                  <SelectItem value="taxes" className="focus:bg-primary/20 focus:text-white">
+                    Taxes
                   </SelectItem>
                 </SelectContent>
               </Select>
